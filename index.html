@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
 
@@ -56,6 +56,9 @@
       </div>
     </div>
   </div>
+
+  <!-- APP SHELL: COMPLETELY HIDDEN UNTIL LICENSE IS VERIFIED -->
+  <div id="appShell" hidden>
 
   <!-- MINIMAL TOP BAR -->
   <header class="topbar no-print">
@@ -517,6 +520,7 @@
     </section>
 
   </main>
+  </div><!-- /#appShell -->
 
   <!-- INSTALL APP DIALOG (For Safari / iOS / Manual Install) -->
   <dialog id="installDialog" class="install-modal no-print">
@@ -595,6 +599,6 @@
 
   <div id="toast" class="toast no-print" role="status" aria-live="polite"></div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

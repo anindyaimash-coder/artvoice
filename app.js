@@ -1182,10 +1182,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const licenseGate = document.getElementById('licenseGate');
+  const appShell = document.getElementById('appShell');
   const licenseForm = document.getElementById('licenseForm');
   const licenseInput = document.getElementById('licenseInput');
   const licenseError = document.getElementById('licenseError');
   const adminKeyDialog = document.getElementById('adminKeyDialog');
+
+  function setAppUnlocked(unlocked) {
+    if (licenseGate) licenseGate.hidden = unlocked;
+    if (appShell) appShell.hidden = !unlocked;
+  }
 
   // Cek apakah sudah pernah di-unlock atau membuka parameter ?admin=owner
   const urlParams = new URLSearchParams(window.location.search);
@@ -1193,9 +1199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem(LICENSE_STORAGE_KEY, 'ARTVOICE-PRO-2026');
   }
 
-  if (localStorage.getItem(LICENSE_STORAGE_KEY)) {
-    if (licenseGate) licenseGate.hidden = true;
-  }
+  setAppUnlocked(Boolean(localStorage.getItem(LICENSE_STORAGE_KEY)));
 
   if (urlParams.get('admin') === 'owner' && adminKeyDialog) {
     setTimeout(() => adminKeyDialog.showModal(), 250);
@@ -1206,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const code = licenseInput?.value || '';
     if (isValidLicenseKey(code)) {
       localStorage.setItem(LICENSE_STORAGE_KEY, code.trim().toUpperCase());
-      if (licenseGate) licenseGate.hidden = true;
+      setAppUnlocked(true);
       if (licenseError) licenseError.hidden = true;
       showToast('🎉 Kode Akses Valid! Selamat datang di ArtVoice.');
     } else {
@@ -1246,7 +1250,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnRelockApp')?.addEventListener('click', () => {
     localStorage.removeItem(LICENSE_STORAGE_KEY);
     adminKeyDialog?.close();
-    if (licenseGate) licenseGate.hidden = false;
+    setAppUnlocked(false);
+    if (licenseInput) licenseInput.value = '';
     showToast('🔒 Aplikasi dikunci kembali untuk tes tampilan pembeli');
   });
 
