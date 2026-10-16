@@ -18,6 +18,45 @@
 </head>
 <body>
 
+  <!-- ==========================================
+       FULL-SCREEN LICENSE GATE (LOCKS APP UNTIL UNLOCKED)
+       ========================================== -->
+  <div id="licenseGate" class="license-gate no-print">
+    <div class="license-card">
+      <div class="brand" style="justify-content:center; margin-bottom:0.5rem;">
+        <span class="brand-dot"></span>
+        ArtVoice
+      </div>
+      <span class="script-tag" style="font-size:1.35rem;">Selamat Datang, Kreator!</span>
+      <h1 class="license-title">Masukkan Kode Akses Anda</h1>
+      <p class="license-desc">
+        Aplikasi ini khusus untuk pemilik lisensi resmi <strong>ArtVoice</strong>. Masukkan kode akses yang Anda dapatkan setelah pembelian untuk membuka aplikasi selamanya di perangkat ini.
+      </p>
+
+      <form id="licenseForm" class="license-form" onsubmit="return false;">
+        <input
+          type="text"
+          id="licenseInput"
+          class="license-input"
+          placeholder="Contoh: ARTVOICE-XXXX-XXXX"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <p id="licenseError" class="license-error" hidden>Kode akses tidak valid. Pastikan huruf &amp; tanda hubung sesuai.</p>
+        <button type="submit" id="btnVerifyLicense" class="btn-pill btn-navy" style="width:100%; padding:0.85rem; font-size:0.96rem;">
+          Buka Aplikasi ArtVoice →
+        </button>
+      </form>
+
+      <div class="license-footer">
+        <p>Belum punya Kode Akses?</p>
+        <a href="https://lynk.id" id="buyLicenseLink" target="_blank" rel="noopener" class="btn-pill btn-amber" style="width:100%; margin-top:0.45rem; text-decoration:none;">
+          ✨ Dapatkan Kode Akses Resmi (QRIS / E-Wallet)
+        </a>
+      </div>
+    </div>
+  </div>
+
   <!-- MINIMAL TOP BAR -->
   <header class="topbar no-print">
     <a href="#" class="brand" id="btnGoHome">
@@ -505,6 +544,51 @@
       </div>
       <div style="margin-top:1.25rem; text-align:right;">
         <button type="button" id="btnOkInstallModal" class="btn-pill btn-navy">Mengerti</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- SECRET ADMIN KEY GENERATOR DIALOG (FOR CREATOR / OWNER) -->
+  <dialog id="adminKeyDialog" class="install-modal no-print" style="max-width:560px;">
+    <div class="install-modal-inner">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem;">
+        <div>
+          <span class="step-pill" style="background:var(--amber); color:var(--navy);">Mode Pemilik (Admin)</span>
+          <h3 style="font-size:1.3rem; margin-top:0.35rem;">Generator Kode Lisensi Pembeli</h3>
+        </div>
+        <button type="button" id="btnCloseAdminModal" class="btn-remove-item" aria-label="Tutup">×</button>
+      </div>
+      <p style="font-size:0.86rem; color:var(--text-body); margin-bottom:1rem;">
+        Bagikan salah satu kode di bawah ini ke pembeli di <strong>Lynk.id / Karyakarsa / Trakteer</strong>, atau klik <strong>Buat Kode Unik Baru</strong> untuk setiap pembeli baru.
+      </p>
+
+      <div style="background:#FAF8F3; border:1px solid var(--border-soft); border-radius:16px; padding:1rem; margin-bottom:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+          <div>
+            <small style="font-size:0.74rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Kode Baru Siap Kirim</small>
+            <div id="generatedKeyDisplay" style="font-family:monospace; font-size:1.25rem; font-weight:700; color:var(--navy); letter-spacing:0.05em; margin-top:0.15rem;">
+              ARTVOICE-PRO-2026
+            </div>
+          </div>
+          <div style="display:flex; gap:0.45rem;">
+            <button type="button" id="btnGenerateNewKey" class="btn-pill btn-soft">🔄 Acak Baru</button>
+            <button type="button" id="btnCopyGeneratedKey" class="btn-pill btn-amber">Salin Kode</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:0.82rem; color:var(--text-body); margin-bottom:1rem;">
+        <strong>Daftar Kode Master (Selalu Aktif untuk Lynk.id Otomatis):</strong>
+        <ul style="margin-top:0.35rem; padding-left:1.2rem; font-family:monospace; color:var(--navy);">
+          <li>ARTVOICE-PRO-2026</li>
+          <li>ARTVOICE-LYNK-VIP</li>
+          <li>ARTVOICE-KREATOR-ID</li>
+        </ul>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-soft); padding-top:1rem;">
+        <button type="button" id="btnRelockApp" class="link-reset" style="color:#991B1B;">🔒 Kunci Ulang App (Tes Tampilan Pembeli)</button>
+        <button type="button" id="btnOkAdminModal" class="btn-pill btn-navy">Selesai</button>
       </div>
     </div>
   </dialog>

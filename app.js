@@ -1137,7 +1137,123 @@ document.addEventListener('DOMContentLoaded', () => {
   installDialog?.addEventListener('click', (e) => {
     if (e.target === installDialog) installDialog.close();
   });
+
+  // ==========================================
+  // SISTEM LISENSI & GENERATOR KODE UNIK (LYNK.ID / KARYAKARSA)
+  // ==========================================
+  const LICENSE_STORAGE_KEY = 'artvoice_license_unlocked_v1';
+  const MASTER_KEYS = new Set([
+    'ARTVOICE-PRO-2026',
+    'ARTVOICE-LYNK-VIP',
+    'ARTVOICE-KREATOR-ID'
+  ]);
+
+  // Fungsi membuat checksum 4 karakter dari 4 karakter acak (tanpa database server)
+  function computeKeyBlock2(block1) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let sum = 19;
+    for (let i = 0; i < block1.length; i++) {
+      sum = (sum * 31 + block1.charCodeAt(i)) % 99991;
+    }
+    let out = '';
+    for (let i = 0; i < 4; i++) {
+      out += chars[(sum + i * 17) % chars.length];
+      sum = Math.floor(sum / 3) + 11;
+    }
+    return out;
+  }
+
+  function generateUniqueBuyerKey() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let block1 = '';
+    for (let i = 0; i < 4; i++) {
+      block1 += chars[Math.floor(Math.random() * chars.length)];
+    }
+    const block2 = computeKeyBlock2(block1);
+    return `ARTVOICE-${block1}-${block2}`;
+  }
+
+  function isValidLicenseKey(rawKey) {
+    const clean = String(rawKey || '').trim().toUpperCase();
+    if (MASTER_KEYS.has(clean)) return true;
+    const match = /^ARTVOICE-([A-Z0-9]{4})-([A-Z0-9]{4})$/.exec(clean);
+    if (!match) return false;
+    return computeKeyBlock2(match[1]) === match[2];
+  }
+
+  const licenseGate = document.getElementById('licenseGate');
+  const licenseForm = document.getElementById('licenseForm');
+  const licenseInput = document.getElementById('licenseInput');
+  const licenseError = document.getElementById('licenseError');
+  const adminKeyDialog = document.getElementById('adminKeyDialog');
+
+  // Cek apakah sudah pernah di-unlock atau membuka parameter ?admin=owner
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('admin') === 'owner') {
+    localStorage.setItem(LICENSE_STORAGE_KEY, 'ARTVOICE-PRO-2026');
+  }
+
+  if (localStorage.getItem(LICENSE_STORAGE_KEY)) {
+    if (licenseGate) licenseGate.hidden = true;
+  }
+
+  if (urlParams.get('admin') === 'owner' && adminKeyDialog) {
+    setTimeout(() => adminKeyDialog.showModal(), 250);
+  }
+
+  licenseForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = licenseInput?.value || '';
+    if (isValidLicenseKey(code)) {
+      localStorage.setItem(LICENSE_STORAGE_KEY, code.trim().toUpperCase());
+      if (licenseGate) licenseGate.hidden = true;
+      if (licenseError) licenseError.hidden = true;
+      showToast('🎉 Kode Akses Valid! Selamat datang di ArtVoice.');
+    } else {
+      if (licenseError) licenseError.hidden = false;
+    }
+  });
+
+  // Pintasan Rahasia Pemilik: Klik 5x pada titik oranye logo ArtVoice untuk membuka Generator Kode
+  let brandTapCount = 0;
+  let brandTapTimer = null;
+  document.getElementById('btnGoHome')?.addEventListener('click', () => {
+    brandTapCount++;
+    clearTimeout(brandTapTimer);
+    brandTapTimer = setTimeout(() => {
+      brandTapCount = 0;
+    }, 1500);
+    if (brandTapCount >= 5) {
+      brandTapCount = 0;
+      adminKeyDialog?.showModal();
+    }
+  });
+
+  // Tombol di dalam Modal Admin Generator Kode
+  document.getElementById('btnGenerateNewKey')?.addEventListener('click', () => {
+    const newKey = generateUniqueBuyerKey();
+    const disp = document.getElementById('generatedKeyDisplay');
+    if (disp) disp.textContent = newKey;
+  });
+
+  document.getElementById('btnCopyGeneratedKey')?.addEventListener('click', () => {
+    const keyText = document.getElementById('generatedKeyDisplay')?.textContent?.trim() || 'ARTVOICE-PRO-2026';
+    navigator.clipboard.writeText(keyText).then(() => {
+      showToast(`Kode ${keyText} disalin!`);
+    });
+  });
+
+  document.getElementById('btnRelockApp')?.addEventListener('click', () => {
+    localStorage.removeItem(LICENSE_STORAGE_KEY);
+    adminKeyDialog?.close();
+    if (licenseGate) licenseGate.hidden = false;
+    showToast('🔒 Aplikasi dikunci kembali untuk tes tampilan pembeli');
+  });
+
+  document.getElementById('btnCloseAdminModal')?.addEventListener('click', () => adminKeyDialog?.close());
+  document.getElementById('btnOkAdminModal')?.addEventListener('click', () => adminKeyDialog?.close());
 });
+
 
 
 
