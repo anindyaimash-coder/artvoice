@@ -1193,10 +1193,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (appShell) appShell.hidden = !unlocked;
   }
 
-  // Cek apakah sudah pernah di-unlock atau membuka parameter ?admin=owner
+  // Cek apakah sudah pernah di-unlock, membuka parameter ?admin=owner, atau membeli lewat Link Khusus (?key=...)
   const urlParams = new URLSearchParams(window.location.search);
+  const urlKey = urlParams.get('key') || urlParams.get('kode') || '';
+
   if (urlParams.get('admin') === 'owner') {
     localStorage.setItem(LICENSE_STORAGE_KEY, 'ARTVOICE-PRO-2026');
+  } else if (urlKey && isValidLicenseKey(urlKey)) {
+    localStorage.setItem(LICENSE_STORAGE_KEY, urlKey.trim().toUpperCase());
+    // Bersihkan parameter ?key= dari address bar setelah berhasil disimpan agar link terlihat bersih
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    setTimeout(() => showToast('🎉 Lisensi VIP Aktif! Selamat datang di ArtVoice.'), 300);
   }
 
   setAppUnlocked(Boolean(localStorage.getItem(LICENSE_STORAGE_KEY)));

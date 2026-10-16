@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Akses Resmi ArtVoice VIP — Terima Kasih!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=4" />
+</head>
+<body>
+  <div class="license-gate" style="position:static; min-height:100vh; padding:2rem 1.25rem;">
+    <div class="license-card" style="max-width:520px; text-align:left;">
+      <div class="brand" style="margin-bottom:0.5rem;">
+        <span class="brand-dot"></span>
+        ArtVoice
+      </div>
+      <span class="script-tag" style="font-size:1.4rem;">Pembelian Berhasil! 🎉</span>
+      <h1 class="license-title" style="font-size:1.65rem;">Ini Kode Akses &amp; Link Aplikasi Anda</h1>
+      <p class="license-desc" style="margin-bottom:1.25rem;">
+        Terima kasih telah membeli <strong>ArtVoice Studio</strong>. Simpan halaman atau kode di bawah ini untuk membuka aplikasi di HP maupun Laptop Anda.
+      </p>
+
+      <!-- Kotak Kode Akses -->
+      <div style="background:#FAF8F3; border:1.5px solid var(--border-input); border-radius:18px; padding:1.15rem 1.25rem; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        <div>
+          <small style="font-size:0.72rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.05em;">Kode Lisensi Resmi Anda</small>
+          <div id="buyerKeyText" style="font-family:monospace; font-size:1.3rem; font-weight:700; color:var(--navy); letter-spacing:0.06em; margin-top:0.15rem;">
+            ARTVOICE-LYNK-VIP
+          </div>
+        </div>
+        <button type="button" id="btnCopyKey" class="btn-pill btn-soft" style="font-size:0.82rem;">
+          📋 Salin Kode
+        </button>
+      </div>
+
+      <!-- Tombol 1-Klik Buka & Langsung Aktif -->
+      <a href="index.html?key=ARTVOICE-LYNK-VIP" class="btn-pill btn-amber" style="width:100%; padding:0.9rem; font-size:0.96rem; text-decoration:none; margin-bottom:1.25rem;">
+        🚀 Buka Aplikasi ArtVoice Sekarang (Otomatis Aktif) →
+      </a>
+
+      <!-- Panduan Singkat Install di HP & Laptop -->
+      <div style="background:#FAF8F3; border-radius:16px; padding:1rem 1.15rem; font-size:0.84rem; color:var(--text-body);">
+        <strong style="color:var(--navy); display:block; margin-bottom:0.35rem;">📲 Cara Pasang Jadi Aplikasi di HP / Laptop:</strong>
+        <ul style="padding-left:1.15rem; display:flex; flex-direction:column; gap:0.25rem;">
+          <li><strong>HP Android (Chrome):</strong> Setelah aplikasi terbuka, klik tombol <strong>📲 Install App</strong> di kanan atas.</li>
+          <li><strong>iPhone / iPad (Safari):</strong> Ketuk ikon <strong>Share</strong> di bawah layar → pilih <strong>Add to Home Screen</strong>.</li>
+          <li><strong>Laptop Windows / Mac:</strong> Klik tombol <strong>📲 Install App</strong> di kanan atas (atau menu <em>File → Add to Dock</em> di Safari Mac).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('btnCopyKey')?.addEventListener('click', (e) => {
+      navigator.clipboard.writeText('ARTVOICE-LYNK-VIP').then(() => {
+        e.target.textContent = '✅ Tersalin!';
+        setTimeout(() => { e.target.textContent = '📋 Salin Kode'; }, 2000);
+      });
+    });
+  </script>
+</body>
+</html>
