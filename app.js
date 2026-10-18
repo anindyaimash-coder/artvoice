@@ -168,8 +168,21 @@ const I18N = {
       aiBody: 'Klien maupun pihak ketiga dilarang memasukkan sketsa, progres, atau karya akhir ke dalam sistem Generative AI (dataset training, img2img, LoRA) maupun mencetaknya sebagai aset kripto/NFT tanpa izin tertulis.',
       portfolioTitle: '7. Hak Publikasi Portofolio Kreator',
       portfolioBody: 'Kreator berhak menampilkan karya yang telah selesai (dengan resolusi pratinjau/watermark) pada portofolio pribadi atau media sosial Kreator sebagai bukti karya, kecuali disepakati NDA tertulis.',
-      ghostingTitle: '8. Batas Waktu Respons Klien (Anti-Ghosting)',
+      ghostingTitle: '8. Batas Waktu Respons & Konfirmasi Klien',
       ghostingBody: 'Apabila Klien tidak memberikan kabar atau umpan balik revisi selama lebih dari 14 hari kalender berturut-turut, jadwal penyelesaian otomatis disesuaikan atau proyek dapat dinyatakan selesai sesuai tahap terakhir.'
+    },
+    preamble: {
+      intro: (date) => `Pada tanggal ${date || '-'}, yang bertanda tangan di bawah ini:`,
+      party1Title: 'I. PIHAK PERTAMA (Pelaksana Pekerjaan / Kreator)',
+      party1NameLabel: 'Nama / Studio',
+      party1ContactLabel: 'No. HP / Email',
+      party1PortfolioLabel: 'Portofolio',
+      party1Note: 'Selanjutnya dalam perjanjian ini disebut sebagai PIHAK PERTAMA.',
+      party2Title: 'II. PIHAK KEDUA (Pemberi Tugas / Klien)',
+      party2NameLabel: 'Nama / Instansi',
+      party2ContactLabel: 'No. HP / Email / Alamat',
+      party2Note: 'Selanjutnya dalam perjanjian ini disebut sebagai PIHAK KEDUA.',
+      transition: 'PIHAK PERTAMA dan PIHAK KEDUA dengan ini menerangkan bahwa kedua belah pihak sepakat untuk mengikatkan diri dalam Perjanjian Kerja Kreatif (SPK) dengan ketentuan dan syarat-syarat sebagai berikut:'
     },
     sigCreator: 'Pihak Pertama (Ilustrator / Desainer)',
     sigClient: 'Pihak Kedua (Klien / Pemesan)',
@@ -240,11 +253,24 @@ const I18N = {
       aiBody: 'Neither the Client nor any third party may feed any sketches, work-in-progress, or final deliverables into Generative AI models (training, img2img, LoRA) or mint them as NFTs without prior written consent.',
       portfolioTitle: '7. Creator Portfolio Display Rights',
       portfolioBody: 'The Creator retains the right to showcase low-resolution/watermarked versions of the completed work in their portfolio and social media for self-promotion, unless a separate NDA is signed.',
-      ghostingTitle: '8. Client Responsiveness (14-Day Hold Policy)',
+      ghostingTitle: '8. Client Response & Feedback Timeframe',
       ghostingBody: 'If the Client fails to provide feedback or communication for more than 14 consecutive calendar days, the delivery timeline will be extended accordingly or the project may be closed at the current milestone.'
     },
-    sigCreator: 'Creator / Illustrator / Designer',
-    sigClient: 'Client / Authorized Representative',
+    preamble: {
+      intro: (date) => `This Creative Service Agreement is entered into as of ${date || '-'}, by and between:`,
+      party1Title: 'I. FIRST PARTY (Creator / Service Provider)',
+      party1NameLabel: 'Name / Studio',
+      party1ContactLabel: 'Phone / Email',
+      party1PortfolioLabel: 'Portfolio',
+      party1Note: 'Hereinafter referred to as the FIRST PARTY.',
+      party2Title: 'II. SECOND PARTY (Client / Commissioning Party)',
+      party2NameLabel: 'Name / Company',
+      party2ContactLabel: 'Phone / Email / Address',
+      party2Note: 'Hereinafter referred to as the SECOND PARTY.',
+      transition: 'Both parties hereby mutually agree to be bound by the creative scope, payment schedule, and copyright licensing terms set forth below:'
+    },
+    sigCreator: 'First Party (Creator / Illustrator / Designer)',
+    sigClient: 'Second Party (Client / Authorized Representative)',
     sigAgreeText: 'By signing below or submitting the initial deposit payment, both parties agree to the invoice breakdown and creative contract terms above.'
   }
 };
@@ -605,17 +631,26 @@ function renderDocumentPreview() {
       </div>
     </div>
 
-    <div class="parties-grid" style="grid-template-columns: 1fr 1fr;">
-      <div class="party-box">
-        <small>${t.creatorLabel}</small>
-        <strong>${esc(data.creatorName)}</strong>
-        <p>${esc(data.creatorEmail)}</p>
+    <div style="margin-bottom: 1.15rem; font-size: 0.83rem; color: var(--text-body); line-height: 1.55;">
+      <p style="margin-bottom: 0.75rem;">${esc(t.preamble.intro(data.issueDate))}</p>
+
+      <div class="parties-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 0.75rem;">
+        <div class="party-box">
+          <small style="color: var(--navy);">${esc(t.preamble.party1Title)}</small>
+          <strong>${esc(data.creatorName || '-')}${data.creatorRole ? ` — ${esc(data.creatorRole)}` : ''}</strong>
+          <p style="margin-top: 0.2rem;"><strong>${esc(t.preamble.party1ContactLabel)}:</strong> ${esc(data.creatorEmail || '-')}</p>
+          ${data.creatorPortfolio ? `<p><strong>${esc(t.preamble.party1PortfolioLabel)}:</strong> ${esc(data.creatorPortfolio)}</p>` : ''}
+          <p style="font-style: italic; font-size: 0.76rem; color: var(--text-muted); margin-top: 0.3rem;">${esc(t.preamble.party1Note)}</p>
+        </div>
+        <div class="party-box">
+          <small style="color: var(--navy);">${esc(t.preamble.party2Title)}</small>
+          <strong>${esc(data.clientName || '-')}${data.clientCompany ? ` (${esc(data.clientCompany)})` : ''}</strong>
+          <p style="margin-top: 0.2rem;"><strong>${esc(t.preamble.party2ContactLabel)}:</strong> ${esc(data.clientContact || '-')}</p>
+          <p style="font-style: italic; font-size: 0.76rem; color: var(--text-muted); margin-top: 0.3rem;">${esc(t.preamble.party2Note)}</p>
+        </div>
       </div>
-      <div class="party-box">
-        <small>${t.billTo}</small>
-        <strong>${esc(data.clientName)} (${esc(data.clientCompany)})</strong>
-        <p>${esc(data.clientContact)}</p>
-      </div>
+
+      <p>${esc(t.preamble.transition)}</p>
     </div>
 
     <div class="contract-clauses">
@@ -1507,7 +1542,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderContractA4Canvas(data) {
     const W = 1488;
     const H = 2105;
-    const PAD = 110;
+    const PAD = 96;
     const CONTENT_W = W - PAD * 2;
     const canvas = document.createElement('canvas');
     canvas.width = W;
@@ -1523,31 +1558,31 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.fillRect(0, 0, W, H);
     ctx.textBaseline = 'top';
 
-    let y = PAD;
+    let y = 86;
 
     // 1. Top Bar
     ctx.fillStyle = '#16263B';
-    ctx.font = '700 38px Fraunces, Georgia, serif';
+    ctx.font = '700 36px Fraunces, Georgia, serif';
     ctx.fillText(t.contractTitle, PAD, y);
 
     ctx.fillStyle = '#4A5568';
-    ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
-    ctx.fillText(t.contractSub, PAD, y + 48);
+    ctx.font = '400 20px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.contractSub, PAD, y + 44);
 
     ctx.fillStyle = '#6E7A8A';
-    ctx.font = '600 21px "DM Sans", -apple-system, sans-serif';
-    ctx.fillText(`Ref: #${data.invoiceNumber} · ${data.issueDate}`, PAD, y + 80);
+    ctx.font = '600 20px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(`Ref: #${data.invoiceNumber} · ${data.issueDate}`, PAD, y + 74);
 
     ctx.textAlign = 'right';
     ctx.fillStyle = '#16263B';
-    ctx.font = '700 26px Fraunces, Georgia, serif';
+    ctx.font = '700 25px Fraunces, Georgia, serif';
     ctx.fillText(data.creatorName || 'Nama Kreator', W - PAD, y);
     ctx.fillStyle = '#4A5568';
-    ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
-    ctx.fillText(data.creatorRole || '', W - PAD, y + 36);
+    ctx.font = '400 20px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(data.creatorRole || '', W - PAD, y + 34);
     ctx.textAlign = 'left';
 
-    y += 126;
+    y += 114;
     ctx.strokeStyle = '#EAE5DC';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -1555,34 +1590,85 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.lineTo(W - PAD, y);
     ctx.stroke();
 
-    // 2. Parties Box
-    y += 30;
-    const boxH = 148;
-    drawRoundedRect(ctx, PAD, y, CONTENT_W, boxH, 22, '#FAF8F3', null);
+    // 2. Formal SPK Preamble & Parties Box
+    y += 22;
+    ctx.fillStyle = '#4A5568';
+    ctx.font = '400 19px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.preamble.intro(data.issueDate), PAD, y);
 
-    const col1X = PAD + 32;
-    const col2X = PAD + CONTENT_W / 2 + 20;
+    y += 32;
+    const boxH = 198;
+    drawRoundedRect(ctx, PAD, y, CONTENT_W, boxH, 20, '#FAF8F3', null);
 
-    ctx.fillStyle = '#6E7A8A';
-    ctx.font = '700 17px "DM Sans", -apple-system, sans-serif';
-    ctx.fillText(t.creatorLabel.toUpperCase(), col1X, y + 24);
-    ctx.fillText(t.billTo.toUpperCase(), col2X, y + 24);
+    const col1X = PAD + 28;
+    const col2X = PAD + CONTENT_W / 2 + 18;
+    const colMaxW = CONTENT_W / 2 - 42;
+
+    // Vertical divider between Party 1 & Party 2
+    ctx.strokeStyle = '#EAE5DC';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(PAD + CONTENT_W / 2, y + 20);
+    ctx.lineTo(PAD + CONTENT_W / 2, y + boxH - 20);
+    ctx.stroke();
 
     ctx.fillStyle = '#16263B';
-    ctx.font = '700 24px "DM Sans", -apple-system, sans-serif';
-    ctx.fillText(data.creatorName || '-', col1X, y + 52);
-    const clientLine = data.clientCompany
+    ctx.font = '700 16px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.preamble.party1Title, col1X, y + 20);
+    ctx.fillText(t.preamble.party2Title, col2X, y + 20);
+
+    const p1Name = data.creatorRole
+      ? `${data.creatorName || '-'} (${data.creatorRole})`
+      : data.creatorName || '-';
+    const p2Name = data.clientCompany
       ? `${data.clientName || '-'} (${data.clientCompany})`
       : data.clientName || '-';
-    ctx.fillText(clientLine, col2X, y + 52);
+
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 21px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(wrapCanvasText(ctx, p1Name, colMaxW)[0] || '-', col1X, y + 48);
+    ctx.fillText(wrapCanvasText(ctx, p2Name, colMaxW)[0] || '-', col2X, y + 48);
 
     ctx.fillStyle = '#4A5568';
-    ctx.font = '400 20px "DM Sans", -apple-system, sans-serif';
-    ctx.fillText(data.creatorEmail || '', col1X, y + 88);
-    ctx.fillText(data.clientContact || '', col2X, y + 88);
+    ctx.font = '400 18px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(
+      wrapCanvasText(ctx, `${t.preamble.party1ContactLabel}: ${data.creatorEmail || '-'}`, colMaxW)[0] || '',
+      col1X,
+      y + 82
+    );
+    if (data.creatorPortfolio) {
+      ctx.fillText(
+        wrapCanvasText(ctx, `${t.preamble.party1PortfolioLabel}: ${data.creatorPortfolio}`, colMaxW)[0] || '',
+        col1X,
+        y + 110
+      );
+    }
+
+    const p2ContactLines = wrapCanvasText(
+      ctx,
+      `${t.preamble.party2ContactLabel}: ${data.clientContact || '-'}`,
+      colMaxW
+    );
+    ctx.fillText(p2ContactLines[0] || '', col2X, y + 82);
+    if (p2ContactLines[1]) {
+      ctx.fillText(p2ContactLines[1], col2X, y + 108);
+    }
+
+    ctx.fillStyle = '#6E7A8A';
+    ctx.font = 'italic 17px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.preamble.party1Note, col1X, y + 154);
+    ctx.fillText(t.preamble.party2Note, col2X, y + 154);
+
+    y += boxH + 20;
+    ctx.fillStyle = '#4A5568';
+    ctx.font = '400 19px "DM Sans", -apple-system, sans-serif';
+    wrapCanvasText(ctx, t.preamble.transition, CONTENT_W).forEach((tl) => {
+      ctx.fillText(tl, PAD, y);
+      y += 26;
+    });
 
     // 3. Clauses List
-    y += boxH + 34;
+    y += 14;
 
     const clauses = [
       {
@@ -1618,30 +1704,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     clauses.forEach((c) => {
       ctx.fillStyle = '#16263B';
-      ctx.font = '700 22px "DM Sans", -apple-system, sans-serif';
+      ctx.font = '700 20px "DM Sans", -apple-system, sans-serif';
       ctx.fillText(c.title, PAD, y);
-      y += 30;
+      y += 26;
 
       ctx.fillStyle = '#4A5568';
-      ctx.font = '400 20px "DM Sans", -apple-system, sans-serif';
+      ctx.font = '400 18.5px "DM Sans", -apple-system, sans-serif';
       const lines = wrapCanvasText(ctx, c.body, CONTENT_W);
       lines.forEach((line) => {
         ctx.fillText(line, PAD, y);
-        y += 27;
+        y += 24;
       });
-      y += 18;
+      y += 13;
     });
 
     // 4. Agreement Note & Signatures
-    y += 10;
+    y += 6;
     ctx.fillStyle = '#6E7A8A';
-    ctx.font = 'italic 19px "DM Sans", -apple-system, sans-serif';
+    ctx.font = 'italic 18px "DM Sans", -apple-system, sans-serif';
     wrapCanvasText(ctx, t.sigAgreeText, CONTENT_W).forEach((al) => {
       ctx.fillText(al, PAD, y);
-      y += 26;
+      y += 24;
     });
 
-    y = Math.max(y + 34, H - 290);
+    y = Math.max(y + 24, H - 250);
     ctx.strokeStyle = '#EAE5DC';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -1649,17 +1735,17 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.lineTo(W - PAD, y);
     ctx.stroke();
 
-    y += 34;
+    y += 26;
     const sig1Center = PAD + CONTENT_W * 0.25;
     const sig2Center = PAD + CONTENT_W * 0.75;
 
     ctx.textAlign = 'center';
     ctx.fillStyle = '#6E7A8A';
-    ctx.font = '400 20px "DM Sans", -apple-system, sans-serif';
+    ctx.font = '400 19px "DM Sans", -apple-system, sans-serif';
     ctx.fillText(t.sigCreator, sig1Center, y);
     ctx.fillText(t.sigClient, sig2Center, y);
 
-    const lineY = y + 125;
+    const lineY = y + 108;
     ctx.strokeStyle = '#C5BFB3';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -1670,9 +1756,9 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.stroke();
 
     ctx.fillStyle = '#16263B';
-    ctx.font = '700 22px "DM Sans", -apple-system, sans-serif';
-    ctx.fillText(data.creatorName || '-', sig1Center, lineY + 16);
-    ctx.fillText(data.clientName || '-', sig2Center, lineY + 16);
+    ctx.font = '700 21px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(data.creatorName || '-', sig1Center, lineY + 14);
+    ctx.fillText(data.clientName || '-', sig2Center, lineY + 14);
     ctx.textAlign = 'left';
 
     return canvas;
