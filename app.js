@@ -327,20 +327,24 @@ function renderLineItemsEditor() {
     row.querySelector('.item-desc-input').addEventListener('input', (e) => {
       itemObj.desc = e.target.value;
       renderDocumentPreview();
+      saveWorkingDraft();
     });
     row.querySelector('.item-qty-input').addEventListener('input', (e) => {
       itemObj.qty = Math.max(1, Number(e.target.value) || 1);
       renderDocumentPreview();
+      saveWorkingDraft();
     });
     row.querySelector('.item-price-input').addEventListener('input', (e) => {
       itemObj.price = Math.max(0, Number(e.target.value) || 0);
       renderDocumentPreview();
+      saveWorkingDraft();
     });
     row.querySelector('.btn-remove-item').addEventListener('click', () => {
       if (state.items.length <= 1) return;
       state.items = state.items.filter((i) => i.id !== id);
       renderLineItemsEditor();
       renderDocumentPreview();
+      saveWorkingDraft();
     });
   });
 }
@@ -379,6 +383,7 @@ function getFormData() {
     projectTitle: val('projectTitle'),
     dpPercent,
     discount,
+    discountAmount: discount,
     taxPercent,
     taxAmount,
     subtotal,
@@ -757,9 +762,129 @@ function updateRateCalculator() {
 }
 
 // ==========================================
-// PENYIMPANAN PROYEK DI LOCALSTORAGE
+// PENYIMPANAN PROYEK & AUTO-SAVE DRAF AKTIF DI LOCALSTORAGE
 // ==========================================
 const STORAGE_KEY = 'kreatorkit_saved_projects_v1';
+const DRAFT_STORAGE_KEY = 'artvoice_working_draft_v1';
+
+const FORM_FIELD_IDS = [
+  'docMode',
+  'currency',
+  'invoiceNumber',
+  'paymentStage',
+  'issueDate',
+  'dueDate',
+  'creatorName',
+  'creatorRole',
+  'creatorEmail',
+  'creatorPortfolio',
+  'clientName',
+  'clientCompany',
+  'clientContact',
+  'projectTitle',
+  'dpPercent',
+  'discountAmount',
+  'taxPercent',
+  'licenseType',
+  'maxSketchRev',
+  'maxFinalRev',
+  'extraRevFee',
+  'deliveryDays',
+  'deliverablesSpec',
+  'sourceFilePolicy',
+  'bankName',
+  'bankAccountNo',
+  'bankAccountName',
+  'customNotes'
+];
+
+const CHECKBOX_FIELD_IDS = ['clauseKillFee', 'clauseNoAI', 'clausePortfolio', 'clauseGhosting'];
+const CALC_FIELD_IDS = [
+  'calcCategory',
+  'calcHourlyRate',
+  'calcHours',
+  'calcComplexity',
+  'calcLicense',
+  'calcRush',
+  'calcSourceFile'
+];
+
+// Simpan otomatis semua ketikan terakhir agar tidak hilang saat keluar aplikasi / tutup window
+function saveWorkingDraft() {
+  try {
+    const data = getFormData();
+    const calcState = {};
+    CALC_FIELD_IDS.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) calcState[id] = el.value;
+    });
+    const activeNav = document.querySelector('.nav-pill.active');
+    const draft = {
+      ...data,
+      docLang: state.docLang,
+      activeView: activeNav?.dataset?.view || 'editor',
+      calcState,
+      updatedAt: new Date().toISOString()
+    };
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
+// Pulihkan ketikan terakhir secara otomatis saat aplikasi dibuka kembali
+function restoreWorkingDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return false;
+    const draft = JSON.parse(raw);
+    if (!draft || typeof draft !== 'object') return false;
+
+    FORM_FIELD_IDS.forEach((f) => {
+      const el = document.getElementById(f);
+      const val = draft[f] !== undefined ? draft[f] : f === 'discountAmount' ? draft.discount : undefined;
+      if (el && val !== undefined) el.value = val;
+    });
+
+    CHECKBOX_FIELD_IDS.forEach((chkId) => {
+      const el = document.getElementById(chkId);
+      if (el && draft[chkId] !== undefined) el.checked = Boolean(draft[chkId]);
+    });
+
+    if (Array.isArray(draft.items) && draft.items.length > 0) {
+      state.items = JSON.parse(JSON.stringify(draft.items));
+    }
+
+    if (draft.docLang === 'id' || draft.docLang === 'en') {
+      state.docLang = draft.docLang;
+      document.querySelectorAll('.lang-btn[data-doc-lang]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.docLang === state.docLang);
+      });
+    }
+
+    if (draft.calcState && typeof draft.calcState === 'object') {
+      CALC_FIELD_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el && draft.calcState[id] !== undefined) {
+          el.value = draft.calcState[id];
+        }
+      });
+    }
+
+    if (draft.activeView && ['editor', 'preview', 'calculator', 'saved'].includes(draft.activeView)) {
+      document.querySelectorAll('.nav-pill').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.view === draft.activeView);
+      });
+      document.querySelectorAll('.view-section').forEach((sec) => {
+        sec.classList.toggle('active', sec.id === `view-${draft.activeView}`);
+      });
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function getSavedProjects() {
   try {
@@ -787,6 +912,7 @@ function saveCurrentProject() {
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  saveWorkingDraft();
   renderSavedProjectsTracker();
   showToast(`Tersimpan: #${data.invoiceNumber}`);
 }
@@ -796,43 +922,13 @@ function loadProjectIntoEditor(invoiceNumber) {
   const found = list.find((p) => p.invoiceNumber === invoiceNumber);
   if (!found) return;
 
-  const fields = [
-    'docMode',
-    'currency',
-    'invoiceNumber',
-    'paymentStage',
-    'issueDate',
-    'dueDate',
-    'creatorName',
-    'creatorRole',
-    'creatorEmail',
-    'creatorPortfolio',
-    'clientName',
-    'clientCompany',
-    'clientContact',
-    'projectTitle',
-    'dpPercent',
-    'discountAmount',
-    'taxPercent',
-    'licenseType',
-    'maxSketchRev',
-    'maxFinalRev',
-    'extraRevFee',
-    'deliveryDays',
-    'deliverablesSpec',
-    'sourceFilePolicy',
-    'bankName',
-    'bankAccountNo',
-    'bankAccountName',
-    'customNotes'
-  ];
-
-  fields.forEach((f) => {
+  FORM_FIELD_IDS.forEach((f) => {
     const el = document.getElementById(f);
-    if (el && found[f] !== undefined) el.value = found[f];
+    const val = found[f] !== undefined ? found[f] : f === 'discountAmount' ? found.discount : undefined;
+    if (el && val !== undefined) el.value = val;
   });
 
-  ['clauseKillFee', 'clauseNoAI', 'clausePortfolio', 'clauseGhosting'].forEach((chkId) => {
+  CHECKBOX_FIELD_IDS.forEach((chkId) => {
     const el = document.getElementById(chkId);
     if (el && found[chkId] !== undefined) el.checked = Boolean(found[chkId]);
   });
@@ -844,6 +940,7 @@ function loadProjectIntoEditor(invoiceNumber) {
   renderLineItemsEditor();
   renderDocumentPreview();
   switchView('editor');
+  saveWorkingDraft();
   showToast(`Proyek #${found.invoiceNumber} dibuka`);
 }
 
@@ -936,6 +1033,7 @@ function switchView(viewId) {
   document.querySelectorAll('.view-section').forEach((sec) => {
     sec.classList.toggle('active', sec.id === `view-${viewId}`);
   });
+  saveWorkingDraft();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -957,6 +1055,7 @@ function applyPreset(presetKey) {
   state.items = JSON.parse(JSON.stringify(p.items));
   renderLineItemsEditor();
   renderDocumentPreview();
+  saveWorkingDraft();
   showToast('Contoh proyek diterapkan');
 }
 
@@ -976,6 +1075,7 @@ function copyWhatsAppSummary() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initDefaultDates();
+  restoreWorkingDraft();
   renderLineItemsEditor();
   renderDocumentPreview();
   updateRateCalculator();
@@ -1003,14 +1103,28 @@ document.addEventListener('DOMContentLoaded', () => {
         b.classList.toggle('active', b.dataset.docLang === state.docLang);
       });
       renderDocumentPreview();
+      saveWorkingDraft();
       showToast(state.docLang === 'en' ? 'Bahasa cetakan: English' : 'Bahasa cetakan: Indonesia');
     });
   });
 
-  // Form inputs live update
-  document.getElementById('docForm')?.addEventListener('input', renderDocumentPreview);
-  document.getElementById('docForm')?.addEventListener('change', renderDocumentPreview);
-  document.getElementById('docMode')?.addEventListener('change', renderDocumentPreview);
+  // Form inputs live update + real-time auto-save
+  const handleFormUpdate = () => {
+    renderDocumentPreview();
+    saveWorkingDraft();
+  };
+  document.getElementById('docForm')?.addEventListener('input', handleFormUpdate);
+  document.getElementById('docForm')?.addEventListener('change', handleFormUpdate);
+  document.getElementById('docMode')?.addEventListener('change', handleFormUpdate);
+
+  // Pastikan tersimpan saat pengguna pindah aplikasi, minimize, atau menutup window/tab
+  window.addEventListener('pagehide', saveWorkingDraft);
+  window.addEventListener('beforeunload', saveWorkingDraft);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      saveWorkingDraft();
+    }
+  });
 
   // Add new line item
   document.getElementById('btnAddItem')?.addEventListener('click', () => {
@@ -1022,6 +1136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     renderLineItemsEditor();
     renderDocumentPreview();
+    saveWorkingDraft();
   });
 
   // Pastel Preset Cards
@@ -1029,16 +1144,18 @@ document.addEventListener('DOMContentLoaded', () => {
     card.addEventListener('click', () => applyPreset(card.dataset.preset));
   });
 
-  // Reset form
+  // Reset form (Kosongkan data proyek & klien saja, profil kreator & rekening tetap tersimpan)
   document.getElementById('btnResetForm')?.addEventListener('click', () => {
     document.getElementById('projectTitle').value = 'Proyek Desain / Ilustrasi Baru';
     document.getElementById('clientName').value = '';
     document.getElementById('clientCompany').value = '';
     document.getElementById('clientContact').value = '';
+    document.getElementById('discountAmount').value = '0';
     state.items = [{ id: Date.now(), desc: 'Jasa Ilustrasi / Desain Kreatif', qty: 1, price: 500000 }];
     renderLineItemsEditor();
     renderDocumentPreview();
-    showToast('Form dikosongkan');
+    saveWorkingDraft();
+    showToast('Data proyek dikosongkan (profil & rekening Anda tetap aman)');
   });
 
   // Copy WhatsApp summary
@@ -1053,13 +1170,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnPrintTop')?.addEventListener('click', triggerPrint);
   document.getElementById('btnPrintDoc')?.addEventListener('click', triggerPrint);
 
-  // Rate Calculator listeners
-  ['calcCategory', 'calcHourlyRate', 'calcHours', 'calcComplexity', 'calcLicense', 'calcRush', 'calcSourceFile'].forEach(
-    (id) => {
-      document.getElementById(id)?.addEventListener('input', updateRateCalculator);
-      document.getElementById(id)?.addEventListener('change', updateRateCalculator);
-    }
-  );
+  // Rate Calculator listeners + auto-save
+  const handleCalcUpdate = () => {
+    updateRateCalculator();
+    saveWorkingDraft();
+  };
+  CALC_FIELD_IDS.forEach((id) => {
+    document.getElementById(id)?.addEventListener('input', handleCalcUpdate);
+    document.getElementById(id)?.addEventListener('change', handleCalcUpdate);
+  });
 
   // Apply Calculator Result to Invoice
   document.getElementById('btnApplyCalcToInvoice')?.addEventListener('click', () => {
@@ -1100,6 +1219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderLineItemsEditor();
     renderDocumentPreview();
     switchView('editor');
+    saveWorkingDraft();
     showToast('Harga dimasukkan ke Invoice');
   });
 
