@@ -80,7 +80,7 @@
         <button type="button" class="lang-btn" data-doc-lang="en">EN</button>
       </div>
       <button type="button" id="btnInstallApp" class="btn-pill btn-soft">📲 Install App</button>
-      <button type="button" id="btnPrintTop" class="btn-pill btn-navy">Cetak PDF</button>
+      <button type="button" id="btnPrintTop" class="btn-pill btn-navy">📥 Simpan PDF</button>
     </div>
   </header>
 
@@ -386,7 +386,7 @@
       <!-- Bottom Call to Action -->
       <div class="bottom-cta">
         <button type="button" id="btnBottomPreview" class="btn-pill btn-navy btn-lg">
-          Lihat Hasil Kertas & Cetak PDF →
+          Lihat Hasil Kertas & Simpan PDF →
         </button>
       </div>
     </section>
@@ -399,14 +399,14 @@
         <button type="button" id="btnBackToEdit" class="btn-pill btn-soft">← Kembali Edit Data</button>
 
         <div class="preview-Quick-bar">
-          <select id="docMode" aria-label="Pilih Dokumen yang Dicetak">
-            <option value="both">Tampilkan: Invoice + Kontrak Kerja</option>
-            <option value="invoice">Hanya Invoice Tagihan</option>
-            <option value="contract">Hanya Kontrak Kerja</option>
+          <select id="docMode" aria-label="Pilih Dokumen yang Ditampilkan">
+            <option value="both">Tampilan: Invoice + SPK (Gabung)</option>
+            <option value="invoice">Tampilan: Hanya Invoice</option>
+            <option value="contract">Tampilan: Hanya Kontrak (SPK)</option>
           </select>
 
           <button type="button" id="btnCopySummary" class="btn-pill btn-soft">Salin Chat WA</button>
-          <button type="button" id="btnPrintDoc" class="btn-pill btn-amber">Cetak / Simpan PDF</button>
+          <button type="button" id="btnPrintDoc" class="btn-pill btn-amber">📥 Simpan File PDF (Gabung / Pisah)</button>
         </div>
       </div>
 
@@ -522,6 +522,66 @@
   </main>
   </div><!-- /#appShell -->
 
+  <!-- PDF EXPORT OPTIONS DIALOG (GABUNG 1 FILE vs PISAH 2 FILE) -->
+  <dialog id="pdfExportDialog" class="install-modal no-print" style="max-width:520px;">
+    <div class="install-modal-inner">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem;">
+        <div>
+          <span class="step-pill" style="background:var(--sage); color:var(--navy);">Unduh ke Perangkat</span>
+          <h3 style="font-size:1.3rem; margin-top:0.35rem;">Simpan File PDF</h3>
+        </div>
+        <button type="button" id="btnClosePdfModal" class="btn-remove-item" aria-label="Tutup">×</button>
+      </div>
+      <p style="font-size:0.88rem; color:var(--text-body); margin-bottom:1.1rem;">
+        Pilih apakah <strong>Invoice</strong> dan <strong>Kontrak Kerja (SPK)</strong> ingin dijadikan <strong>1 file PDF gabungan</strong> atau <strong>2 file PDF terpisah</strong>:
+      </p>
+
+      <div style="display:flex; flex-direction:column; gap:0.75rem;">
+        <!-- Opsi 1: Gabung Jadi 1 File PDF -->
+        <div style="background:#FAF8F3; border:1.5px solid var(--navy); border-radius:16px; padding:1rem 1.15rem; display:flex; justify-content:space-between; align-items:center; gap:0.85rem; flex-wrap:wrap;">
+          <div style="flex:1; min-width:200px;">
+            <strong style="font-size:0.96rem; color:var(--navy); display:block;">📄 Gabung Jadi 1 File PDF (Invoice + SPK)</strong>
+            <span style="font-size:0.8rem; color:var(--text-body);">Halaman 1 Invoice &amp; Halaman 2 Kontrak Kerja dalam 1 file praktis.</span>
+          </div>
+          <button type="button" id="btnDownloadCombinedPdf" class="btn-pill btn-navy" style="white-space:nowrap;">
+            📥 Unduh 1 PDF Gabung
+          </button>
+        </div>
+
+        <!-- Opsi 2: Pisah Jadi 2 File PDF -->
+        <div style="background:#FAF8F3; border:1px solid var(--border-soft); border-radius:16px; padding:1rem 1.15rem; display:flex; justify-content:space-between; align-items:center; gap:0.85rem; flex-wrap:wrap;">
+          <div style="flex:1; min-width:200px;">
+            <strong style="font-size:0.96rem; color:var(--navy); display:block;">📑 Pisah Jadi 2 File PDF (Sendiri-Sendiri)</strong>
+            <span style="font-size:0.8rem; color:var(--text-body);">Mengunduh 2 file berbeda: 1 file PDF Invoice &amp; 1 file PDF SPK.</span>
+          </div>
+          <button type="button" id="btnDownloadSeparatePdfs" class="btn-pill btn-amber" style="white-space:nowrap;">
+            📥 Unduh 2 PDF Terpisah
+          </button>
+        </div>
+
+        <!-- Opsi 3: Unduh Satuan -->
+        <div style="background:#FCFBF9; border:1px dashed var(--border-input); border-radius:14px; padding:0.85rem 1.1rem;">
+          <small style="font-size:0.76rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:0.5rem;">
+            Atau Unduh Salah Satu Saja:
+          </small>
+          <div style="display:flex; gap:0.55rem; flex-wrap:wrap;">
+            <button type="button" id="btnDownloadInvoiceOnlyPdf" class="btn-pill btn-soft" style="flex:1; font-size:0.84rem;">
+              📄 Hanya PDF Invoice
+            </button>
+            <button type="button" id="btnDownloadContractOnlyPdf" class="btn-pill btn-soft" style="flex:1; font-size:0.84rem;">
+              📝 Hanya PDF Kontrak (SPK)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-soft); margin-top:1.15rem; padding-top:0.95rem;">
+        <button type="button" id="btnSystemPrintDialog" class="link-reset" style="font-size:0.82rem;">🖨️ Cetak ke Printer Fisik</button>
+        <button type="button" id="btnCancelPdfModal" class="btn-pill btn-soft">Tutup</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- INSTALL APP DIALOG (For Safari / iOS / Manual Install) -->
   <dialog id="installDialog" class="install-modal no-print">
     <div class="install-modal-inner">
@@ -599,6 +659,6 @@
 
   <div id="toast" class="toast no-print" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

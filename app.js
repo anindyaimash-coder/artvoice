@@ -1161,14 +1161,717 @@ document.addEventListener('DOMContentLoaded', () => {
   // Copy WhatsApp summary
   document.getElementById('btnCopySummary')?.addEventListener('click', copyWhatsAppSummary);
 
-  // Save & Print
-  document.getElementById('btnSaveDraft')?.addEventListener('click', saveCurrentProject);
-  const triggerPrint = () => {
-    switchView('preview');
-    setTimeout(() => window.print(), 120);
+  // ==========================================
+  // GENERATOR FILE PDF LANGSUNG (GABUNG 1 FILE / PISAH 2 FILE)
+  // ==========================================
+  function sanitizeFilename(str) {
+    return String(str || 'DOKUMEN')
+      .trim()
+      .replace(/[^a-zA-Z0-9_-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'DOKUMEN';
+  }
+
+  function wrapCanvasText(ctx, text, maxWidth) {
+    const rawLines = String(text || '').split('\n');
+    const lines = [];
+    for (const rawLine of rawLines) {
+      const words = rawLine.split(/\s+/).filter(Boolean);
+      if (words.length === 0) {
+        lines.push('');
+        continue;
+      }
+      let current = words[0];
+      for (let i = 1; i < words.length; i++) {
+        const test = current + ' ' + words[i];
+        if (ctx.measureText(test).width <= maxWidth) {
+          current = test;
+        } else {
+          lines.push(current);
+          current = words[i];
+        }
+      }
+      lines.push(current);
+    }
+    return lines;
+  }
+
+  function drawRoundedRect(ctx, x, y, w, h, r, fillStyle, strokeStyle) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+    if (fillStyle) {
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+    }
+    if (strokeStyle) {
+      ctx.strokeStyle = strokeStyle;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+
+  function renderInvoiceA4Canvas(data) {
+    const W = 1488;
+    const H = 2105;
+    const PAD = 110;
+    const CONTENT_W = W - PAD * 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    const t = I18N[state.docLang] || I18N.id;
+    const cur = data.currency;
+    const licenseInfo = t.licenses[data.licenseType] || t.licenses.commercial_limited;
+
+    // White A4 background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, W, H);
+    ctx.textBaseline = 'top';
+
+    let y = PAD;
+
+    // 1. Header Left: Title + Invoice No + Status Stamp
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 44px Fraunces, Georgia, serif';
+    ctx.fillText(t.invoiceTitle, PAD, y);
+
+    ctx.fillStyle = '#6E7A8A';
+    ctx.font = '600 23px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(`#${data.invoiceNumber}`, PAD, y + 56);
+
+    let stampBg = '#F7E4C8';
+    let stampFg = '#8C5319';
+    let dueLabel = `${t.dueNowDP} (${data.dpPercent}%)`;
+    let dueNominal = data.dpAmount;
+
+    if (data.paymentStage === 'final') {
+      stampBg = '#E5E0FA';
+      stampFg = '#362878';
+      dueLabel = `${t.dueNowFinal} (${100 - data.dpPercent}%)`;
+      dueNominal = data.remainingAmount;
+    } else if (data.paymentStage === 'full') {
+      stampBg = '#E5E0FA';
+      stampFg = '#362878';
+      dueLabel = t.dueNowFull;
+      dueNominal = data.grandTotal;
+    } else if (data.paymentStage === 'paid') {
+      stampBg = '#D8EAE6';
+      stampFg = '#19574B';
+      dueLabel = t.dueNowPaid;
+      dueNominal = 0;
+    }
+
+    const badgeText = t.stageBadges[data.paymentStage] || 'INVOICE';
+    ctx.font = '700 19px "DM Sans", -apple-system, sans-serif';
+    const badgeW = ctx.measureText(badgeText).width + 38;
+    drawRoundedRect(ctx, PAD, y + 94, badgeW, 38, 19, stampBg, null);
+    ctx.fillStyle = stampFg;
+    ctx.fillText(badgeText, PAD + 19, y + 103);
+
+    // Header Right: Creator Info
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 28px Fraunces, Georgia, serif';
+    ctx.fillText(data.creatorName || 'Nama Kreator', W - PAD, y);
+
+    ctx.fillStyle = '#4A5568';
+    ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
+    let ry = y + 38;
+    [data.creatorRole, data.creatorEmail, data.creatorPortfolio].filter(Boolean).forEach((line) => {
+      ctx.fillText(line, W - PAD, ry);
+      ry += 28;
+    });
+    ctx.textAlign = 'left';
+
+    y += 162;
+    ctx.strokeStyle = '#EAE5DC';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(PAD, y);
+    ctx.lineTo(W - PAD, y);
+    ctx.stroke();
+
+    // 2. Parties & Dates Box
+    y += 36;
+    const boxH = 186;
+    drawRoundedRect(ctx, PAD, y, CONTENT_W, boxH, 24, '#FAF8F3', null);
+
+    // Left Party: Client
+    const col1X = PAD + 34;
+    ctx.fillStyle = '#6E7A8A';
+    ctx.font = '700 18px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.billTo.toUpperCase(), col1X, y + 26);
+
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 26px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(data.clientName || 'Nama Klien', col1X, y + 54);
+
+    ctx.fillStyle = '#4A5568';
+    ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
+    if (data.clientCompany) ctx.fillText(data.clientCompany, col1X, y + 90);
+    if (data.clientContact) ctx.fillText(data.clientContact, col1X, y + 120);
+
+    // Vertical divider in box
+    const midX = PAD + CONTENT_W * 0.54;
+    ctx.strokeStyle = '#EAE5DC';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(midX, y + 26);
+    ctx.lineTo(midX, y + boxH - 26);
+    ctx.stroke();
+
+    // Right Meta Dates
+    const metaRows = [
+      [t.issueDate + ':', data.issueDate || '-'],
+      [t.dueDate + ':', data.dueDate || '-'],
+      [t.licenseBadge + ':', (licenseInfo.name.split('(')[0] || '').trim()]
+    ];
+    let my = y + 36;
+    metaRows.forEach(([label, val]) => {
+      ctx.fillStyle = '#6E7A8A';
+      ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
+      ctx.fillText(label, midX + 32, my);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#16263B';
+      ctx.font = '700 21px "DM Sans", -apple-system, sans-serif';
+      ctx.fillText(val, W - PAD - 34, my);
+      ctx.textAlign = 'left';
+      my += 42;
+    });
+
+    // 3. Project Title Banner
+    y += boxH + 40;
+    ctx.fillStyle = '#6E7A8A';
+    ctx.font = '700 18px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.projectTitle.toUpperCase(), PAD, y);
+
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 31px Fraunces, Georgia, serif';
+    const projLines = wrapCanvasText(ctx, data.projectTitle || '-', CONTENT_W);
+    y += 28;
+    projLines.forEach((pl) => {
+      ctx.fillText(pl, PAD, y);
+      y += 38;
+    });
+
+    // 4. Items Table
+    y += 22;
+    const colDescW = CONTENT_W * 0.52;
+    const colQtyX = PAD + CONTENT_W * 0.61;
+    const colUnitX = PAD + CONTENT_W * 0.80;
+    const colTotalX = W - PAD;
+
+    ctx.fillStyle = '#6E7A8A';
+    ctx.font = '700 19px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.colDesc.toUpperCase(), PAD, y);
+    ctx.textAlign = 'right';
+    ctx.fillText(t.colQty.toUpperCase(), colQtyX, y);
+    ctx.fillText(t.colUnit.toUpperCase(), colUnitX, y);
+    ctx.fillText(t.colAmount.toUpperCase(), colTotalX, y);
+    ctx.textAlign = 'left';
+
+    y += 34;
+    ctx.strokeStyle = '#16263B';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(PAD, y);
+    ctx.lineTo(W - PAD, y);
+    ctx.stroke();
+
+    y += 20;
+    data.items.forEach((item) => {
+      ctx.font = '600 22px "DM Sans", -apple-system, sans-serif';
+      const descLines = wrapCanvasText(ctx, item.desc || '-', colDescW - 20);
+      const rowH = Math.max(46, descLines.length * 30 + 18);
+
+      ctx.fillStyle = '#16263B';
+      descLines.forEach((dl, idx) => {
+        ctx.fillText(dl, PAD, y + idx * 30);
+      });
+
+      ctx.textAlign = 'right';
+      ctx.font = '400 22px "DM Sans", -apple-system, sans-serif';
+      ctx.fillText(String(item.qty), colQtyX, y);
+      ctx.fillText(formatMoney(item.price, cur), colUnitX, y);
+      ctx.font = '700 22px "DM Sans", -apple-system, sans-serif';
+      ctx.fillText(formatMoney(item.qty * item.price, cur), colTotalX, y);
+      ctx.textAlign = 'left';
+
+      y += rowH;
+      ctx.strokeStyle = '#EAE5DC';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(PAD, y);
+      ctx.lineTo(W - PAD, y);
+      ctx.stroke();
+      y += 20;
+    });
+
+    // 5. Summary & Payment Info Grid
+    y += 22;
+    const leftW = CONTENT_W * 0.50;
+    const rightX = PAD + CONTENT_W * 0.55;
+    const rightW = CONTENT_W * 0.45;
+
+    // Left: Payment Box
+    drawRoundedRect(ctx, PAD, y, leftW, 145, 20, '#FAF8F3', null);
+    ctx.fillStyle = '#6E7A8A';
+    ctx.font = '700 18px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.paymentMethod.toUpperCase(), PAD + 28, y + 24);
+
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 24px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(`${data.bankName} — ${data.bankAccountNo}`, PAD + 28, y + 56);
+
+    ctx.fillStyle = '#4A5568';
+    ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(`${t.accountHolder}: ${data.bankAccountName}`, PAD + 28, y + 94);
+
+    if (data.customNotes) {
+      let ny = y + 172;
+      ctx.fillStyle = '#6E7A8A';
+      ctx.font = '700 18px "DM Sans", -apple-system, sans-serif';
+      ctx.fillText(t.notesTitle.toUpperCase() + ':', PAD, ny);
+      ny += 26;
+      ctx.fillStyle = '#4A5568';
+      ctx.font = '400 20px "DM Sans", -apple-system, sans-serif';
+      wrapCanvasText(ctx, data.customNotes, leftW).forEach((nl) => {
+        ctx.fillText(nl, PAD, ny);
+        ny += 28;
+      });
+    }
+
+    // Right: Totals Box
+    let ty = y + 6;
+    const drawTotalRow = (label, val, isBold = false, color = '#16263B') => {
+      ctx.fillStyle = color;
+      ctx.font = `${isBold ? '700' : '400'} 22px "DM Sans", -apple-system, sans-serif`;
+      ctx.fillText(label, rightX, ty);
+      ctx.textAlign = 'right';
+      ctx.font = '700 22px "DM Sans", -apple-system, sans-serif';
+      ctx.fillText(val, W - PAD, ty);
+      ctx.textAlign = 'left';
+      ty += 38;
+    };
+
+    drawTotalRow(t.subtotal, formatMoney(data.subtotal, cur));
+    if (data.discount > 0) {
+      drawTotalRow(t.discount, `- ${formatMoney(data.discount, cur)}`, false, '#E11D48');
+    }
+    if (data.taxPercent > 0) {
+      drawTotalRow(`${t.tax} (${data.taxPercent}%)`, formatMoney(data.taxAmount, cur));
+    }
+
+    ty += 6;
+    ctx.strokeStyle = '#16263B';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(rightX, ty);
+    ctx.lineTo(W - PAD, ty);
+    ctx.stroke();
+    ty += 16;
+
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 26px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.grandTotal, rightX, ty);
+    ctx.textAlign = 'right';
+    ctx.fillText(formatMoney(data.grandTotal, cur), W - PAD, ty);
+    ctx.textAlign = 'left';
+    ty += 48;
+
+    // Due Now Highlight Pill
+    drawRoundedRect(ctx, rightX, ty, rightW, 56, 16, '#D8EAE6', null);
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 22px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(dueLabel, rightX + 20, ty + 16);
+    ctx.textAlign = 'right';
+    ctx.fillText(data.paymentStage === 'paid' ? 'LUNAS ✓' : formatMoney(dueNominal, cur), W - PAD - 20, ty + 16);
+    ctx.textAlign = 'left';
+    ty += 70;
+
+    if (data.paymentStage === 'dp') {
+      ctx.fillStyle = '#4A5568';
+      ctx.font = '500 20px "DM Sans", -apple-system, sans-serif';
+      ctx.fillText(`${t.remainingBalance} (${100 - data.dpPercent}%)`, rightX, ty);
+      ctx.textAlign = 'right';
+      ctx.font = '700 20px "DM Sans", -apple-system, sans-serif';
+      ctx.fillText(formatMoney(data.remainingAmount, cur), W - PAD, ty);
+      ctx.textAlign = 'left';
+    }
+
+    return canvas;
+  }
+
+  function renderContractA4Canvas(data) {
+    const W = 1488;
+    const H = 2105;
+    const PAD = 110;
+    const CONTENT_W = W - PAD * 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    const t = I18N[state.docLang] || I18N.id;
+    const licenseInfo = t.licenses[data.licenseType] || t.licenses.commercial_limited;
+    const sourcePolicyText =
+      data.sourceFilePolicy === 'included' ? t.clauses.sourceIncluded : t.clauses.sourceExcluded;
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, W, H);
+    ctx.textBaseline = 'top';
+
+    let y = PAD;
+
+    // 1. Top Bar
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 38px Fraunces, Georgia, serif';
+    ctx.fillText(t.contractTitle, PAD, y);
+
+    ctx.fillStyle = '#4A5568';
+    ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.contractSub, PAD, y + 48);
+
+    ctx.fillStyle = '#6E7A8A';
+    ctx.font = '600 21px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(`Ref: #${data.invoiceNumber} · ${data.issueDate}`, PAD, y + 80);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 26px Fraunces, Georgia, serif';
+    ctx.fillText(data.creatorName || 'Nama Kreator', W - PAD, y);
+    ctx.fillStyle = '#4A5568';
+    ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(data.creatorRole || '', W - PAD, y + 36);
+    ctx.textAlign = 'left';
+
+    y += 126;
+    ctx.strokeStyle = '#EAE5DC';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(PAD, y);
+    ctx.lineTo(W - PAD, y);
+    ctx.stroke();
+
+    // 2. Parties Box
+    y += 30;
+    const boxH = 148;
+    drawRoundedRect(ctx, PAD, y, CONTENT_W, boxH, 22, '#FAF8F3', null);
+
+    const col1X = PAD + 32;
+    const col2X = PAD + CONTENT_W / 2 + 20;
+
+    ctx.fillStyle = '#6E7A8A';
+    ctx.font = '700 17px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.creatorLabel.toUpperCase(), col1X, y + 24);
+    ctx.fillText(t.billTo.toUpperCase(), col2X, y + 24);
+
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 24px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(data.creatorName || '-', col1X, y + 52);
+    const clientLine = data.clientCompany
+      ? `${data.clientName || '-'} (${data.clientCompany})`
+      : data.clientName || '-';
+    ctx.fillText(clientLine, col2X, y + 52);
+
+    ctx.fillStyle = '#4A5568';
+    ctx.font = '400 20px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(data.creatorEmail || '', col1X, y + 88);
+    ctx.fillText(data.clientContact || '', col2X, y + 88);
+
+    // 3. Clauses List
+    y += boxH + 34;
+
+    const clauses = [
+      {
+        title: t.clauses.scopeTitle,
+        body: `${t.projectTitle}: ${data.projectTitle} | Deliverables: ${data.deliverablesSpec} | Timeline: ${data.deliveryDays}. ${sourcePolicyText}`
+      },
+      {
+        title: t.clauses.paymentTitle,
+        body: t.clauses.paymentBody(data.dpPercent)
+      },
+      {
+        title: t.clauses.revisionTitle,
+        body: t.clauses.revisionBody(data.maxSketchRev, data.maxFinalRev, data.extraRevFee)
+      },
+      {
+        title: `${t.clauses.licenseTitle} — ${licenseInfo.name}`,
+        body: licenseInfo.desc
+      }
+    ];
+
+    if (data.clauseKillFee) {
+      clauses.push({ title: t.clauses.killFeeTitle, body: t.clauses.killFeeBody });
+    }
+    if (data.clauseNoAI) {
+      clauses.push({ title: t.clauses.aiTitle, body: t.clauses.aiBody });
+    }
+    if (data.clausePortfolio) {
+      clauses.push({ title: t.clauses.portfolioTitle, body: t.clauses.portfolioBody });
+    }
+    if (data.clauseGhosting) {
+      clauses.push({ title: t.clauses.ghostingTitle, body: t.clauses.ghostingBody });
+    }
+
+    clauses.forEach((c) => {
+      ctx.fillStyle = '#16263B';
+      ctx.font = '700 22px "DM Sans", -apple-system, sans-serif';
+      ctx.fillText(c.title, PAD, y);
+      y += 30;
+
+      ctx.fillStyle = '#4A5568';
+      ctx.font = '400 20px "DM Sans", -apple-system, sans-serif';
+      const lines = wrapCanvasText(ctx, c.body, CONTENT_W);
+      lines.forEach((line) => {
+        ctx.fillText(line, PAD, y);
+        y += 27;
+      });
+      y += 18;
+    });
+
+    // 4. Agreement Note & Signatures
+    y += 10;
+    ctx.fillStyle = '#6E7A8A';
+    ctx.font = 'italic 19px "DM Sans", -apple-system, sans-serif';
+    wrapCanvasText(ctx, t.sigAgreeText, CONTENT_W).forEach((al) => {
+      ctx.fillText(al, PAD, y);
+      y += 26;
+    });
+
+    y = Math.max(y + 34, H - 290);
+    ctx.strokeStyle = '#EAE5DC';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(PAD, y);
+    ctx.lineTo(W - PAD, y);
+    ctx.stroke();
+
+    y += 34;
+    const sig1Center = PAD + CONTENT_W * 0.25;
+    const sig2Center = PAD + CONTENT_W * 0.75;
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#6E7A8A';
+    ctx.font = '400 20px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(t.sigCreator, sig1Center, y);
+    ctx.fillText(t.sigClient, sig2Center, y);
+
+    const lineY = y + 125;
+    ctx.strokeStyle = '#C5BFB3';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(sig1Center - 190, lineY);
+    ctx.lineTo(sig1Center + 190, lineY);
+    ctx.moveTo(sig2Center - 190, lineY);
+    ctx.lineTo(sig2Center + 190, lineY);
+    ctx.stroke();
+
+    ctx.fillStyle = '#16263B';
+    ctx.font = '700 22px "DM Sans", -apple-system, sans-serif';
+    ctx.fillText(data.creatorName || '-', sig1Center, lineY + 16);
+    ctx.fillText(data.clientName || '-', sig2Center, lineY + 16);
+    ctx.textAlign = 'left';
+
+    return canvas;
+  }
+
+  function dataUrlToUint8Array(dataUrl) {
+    const base64 = dataUrl.split(',')[1] || '';
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+      bytes[i] = bin.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  // Membuat file biner .PDF standar (PDF-1.4 A4) dari 1 atau beberapa Canvas tanpa library eksternal
+  function buildPdfFromCanvases(canvases) {
+    const encoder = new TextEncoder();
+    const chunks = [];
+    let offset = 0;
+    const offsets = [0]; // index 0 unused
+
+    const pushStr = (str) => {
+      const b = encoder.encode(str);
+      chunks.push(b);
+      offset += b.length;
+    };
+    const pushBytes = (b) => {
+      chunks.push(b);
+      offset += b.length;
+    };
+
+    pushStr('%PDF-1.4\n%\xFF\xFF\xFF\xFF\n');
+
+    const numPages = canvases.length;
+    const pageObjIds = [];
+    for (let i = 0; i < numPages; i++) {
+      pageObjIds.push(3 + i * 3);
+    }
+
+    // Object 1: Catalog
+    offsets[1] = offset;
+    pushStr('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+
+    // Object 2: Pages
+    offsets[2] = offset;
+    pushStr(`2 0 obj\n<< /Type /Pages /Kids [${pageObjIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${numPages} >>\nendobj\n`);
+
+    const PAGE_W_PT = 595.28;
+    const PAGE_H_PT = 841.89;
+
+    for (let i = 0; i < numPages; i++) {
+      const canvas = canvases[i];
+      const jpegBytes = dataUrlToUint8Array(canvas.toDataURL('image/jpeg', 0.94));
+      const pageObjId = 3 + i * 3;
+      const contentObjId = pageObjId + 1;
+      const imgObjId = pageObjId + 2;
+
+      // Page Object
+      offsets[pageObjId] = offset;
+      pushStr(
+        `${pageObjId} 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /XObject << /Im0 ${imgObjId} 0 R >> >> /MediaBox [0 0 ${PAGE_W_PT} ${PAGE_H_PT}] /Contents ${contentObjId} 0 R >>\nendobj\n`
+      );
+
+      // Content Stream
+      const contentStream = `q ${PAGE_W_PT} 0 0 ${PAGE_H_PT} 0 0 cm /Im0 Do Q`;
+      offsets[contentObjId] = offset;
+      pushStr(
+        `${contentObjId} 0 obj\n<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream\nendobj\n`
+      );
+
+      // Image XObject
+      offsets[imgObjId] = offset;
+      pushStr(
+        `${imgObjId} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`
+      );
+      pushBytes(jpegBytes);
+      pushStr('\nendstream\nendobj\n');
+    }
+
+    const totalObjs = 2 + numPages * 3 + 1;
+    const xrefOffset = offset;
+    pushStr(`xref\n0 ${totalObjs}\n0000000000 65535 f \n`);
+    for (let id = 1; id < totalObjs; id++) {
+      const offStr = String(offsets[id] || 0).padStart(10, '0');
+      pushStr(`${offStr} 00000 n \n`);
+    }
+    pushStr(`trailer\n<< /Size ${totalObjs} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`);
+
+    const out = new Uint8Array(offset);
+    let pos = 0;
+    for (const c of chunks) {
+      out.set(c, pos);
+      pos += c.length;
+    }
+    return out;
+  }
+
+  function triggerPdfFileDownload(pdfBytes, filename) {
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 4000);
+  }
+
+  const pdfExportDialog = document.getElementById('pdfExportDialog');
+  const openPdfExportModal = () => {
+    saveWorkingDraft();
+    renderDocumentPreview();
+    if (pdfExportDialog && typeof pdfExportDialog.showModal === 'function') {
+      pdfExportDialog.showModal();
+    } else {
+      // Fallback langsung unduh gabungan
+      downloadPdfByMode('combined');
+    }
   };
-  document.getElementById('btnPrintTop')?.addEventListener('click', triggerPrint);
-  document.getElementById('btnPrintDoc')?.addEventListener('click', triggerPrint);
+
+  async function downloadPdfByMode(mode) {
+    try {
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+    } catch {
+      // Continue with fallback fonts
+    }
+
+    const data = getFormData();
+    const cleanInv = sanitizeFilename(data.invoiceNumber || 'INV-001');
+    const cleanClient = sanitizeFilename(data.clientName || 'Klien');
+
+    if (mode === 'combined') {
+      const invCanvas = renderInvoiceA4Canvas(data);
+      const spkCanvas = renderContractA4Canvas(data);
+      const pdfBytes = buildPdfFromCanvases([invCanvas, spkCanvas]);
+      const filename = `Invoice-dan-SPK-${cleanInv}-${cleanClient}.pdf`;
+      triggerPdfFileDownload(pdfBytes, filename);
+      pdfExportDialog?.close();
+      showToast(`✅ Diunduh: ${filename} (Gabung 1 File)`);
+    } else if (mode === 'separate') {
+      const invCanvas = renderInvoiceA4Canvas(data);
+      const spkCanvas = renderContractA4Canvas(data);
+      const invBytes = buildPdfFromCanvases([invCanvas]);
+      const spkBytes = buildPdfFromCanvases([spkCanvas]);
+      const invFile = `Invoice-${cleanInv}-${cleanClient}.pdf`;
+      const spkFile = `SPK-Kontrak-${cleanInv}-${cleanClient}.pdf`;
+
+      triggerPdfFileDownload(invBytes, invFile);
+      setTimeout(() => {
+        triggerPdfFileDownload(spkBytes, spkFile);
+      }, 450);
+
+      pdfExportDialog?.close();
+      showToast('✅ 2 File PDF Terpisah (Invoice & SPK) berhasil diunduh!');
+    } else if (mode === 'invoice') {
+      const invCanvas = renderInvoiceA4Canvas(data);
+      const invBytes = buildPdfFromCanvases([invCanvas]);
+      const invFile = `Invoice-${cleanInv}-${cleanClient}.pdf`;
+      triggerPdfFileDownload(invBytes, invFile);
+      pdfExportDialog?.close();
+      showToast(`✅ Diunduh: ${invFile}`);
+    } else if (mode === 'contract') {
+      const spkCanvas = renderContractA4Canvas(data);
+      const spkBytes = buildPdfFromCanvases([spkCanvas]);
+      const spkFile = `SPK-Kontrak-${cleanInv}-${cleanClient}.pdf`;
+      triggerPdfFileDownload(spkBytes, spkFile);
+      pdfExportDialog?.close();
+      showToast(`✅ Diunduh: ${spkFile}`);
+    }
+  }
+
+  // Save & PDF Export triggers
+  document.getElementById('btnSaveDraft')?.addEventListener('click', saveCurrentProject);
+  document.getElementById('btnPrintTop')?.addEventListener('click', openPdfExportModal);
+  document.getElementById('btnPrintDoc')?.addEventListener('click', openPdfExportModal);
+
+  document.getElementById('btnDownloadCombinedPdf')?.addEventListener('click', () => downloadPdfByMode('combined'));
+  document.getElementById('btnDownloadSeparatePdfs')?.addEventListener('click', () => downloadPdfByMode('separate'));
+  document.getElementById('btnDownloadInvoiceOnlyPdf')?.addEventListener('click', () => downloadPdfByMode('invoice'));
+  document.getElementById('btnDownloadContractOnlyPdf')?.addEventListener('click', () => downloadPdfByMode('contract'));
+
+  document.getElementById('btnSystemPrintDialog')?.addEventListener('click', () => {
+    pdfExportDialog?.close();
+    switchView('preview');
+    setTimeout(() => window.print(), 150);
+  });
+
+  document.getElementById('btnClosePdfModal')?.addEventListener('click', () => pdfExportDialog?.close());
+  document.getElementById('btnCancelPdfModal')?.addEventListener('click', () => pdfExportDialog?.close());
+  pdfExportDialog?.addEventListener('click', (e) => {
+    if (e.target === pdfExportDialog) pdfExportDialog.close();
+  });
 
   // Rate Calculator listeners + auto-save
   const handleCalcUpdate = () => {
