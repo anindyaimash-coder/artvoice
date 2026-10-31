@@ -658,8 +658,8 @@
     </div>
   </dialog>
 
-  <!-- BUG REPORT DIALOG (KIRIM KE EMAIL DEVELOPER) -->
-  <dialog id="bugReportDialog" class="install-modal no-print" style="max-width:480px;">
+  <!-- BUG REPORT DIALOG (KIRIM LANGSUNG DI LATAR BELAKANG TANPA MENAMPILKAN EMAIL) -->
+  <dialog id="bugReportDialog" class="install-modal no-print" style="max-width:460px;">
     <div class="install-modal-inner">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem;">
         <div>
@@ -669,7 +669,7 @@
         <button type="button" id="btnCloseBugModal" class="btn-remove-item" aria-label="Tutup">×</button>
       </div>
       <p style="font-size:0.86rem; color:var(--text-body); margin-bottom:1rem;">
-        Menemukan fitur yang kurang pas atau error? Tuliskan detailnya di bawah ini untuk dikirim langsung ke email pengembang ArtVoice.
+        Menemukan fitur yang kurang pas atau error? Tuliskan detailnya di bawah ini dan klik <strong>Kirim Laporan</strong>.
       </p>
 
       <form id="bugReportForm" onsubmit="return false;" style="display:flex; flex-direction:column; gap:0.85rem;">
@@ -686,8 +686,8 @@
         </div>
 
         <div class="field">
-          <label for="bugSenderContact">Email / Kontak Anda (Opsional)</label>
-          <input type="text" id="bugSenderContact" placeholder="Contoh: nama@email.com atau @username" />
+          <label for="bugSenderContact">Kontak Anda (Opsional, jika ingin dihubungi balik)</label>
+          <input type="text" id="bugSenderContact" placeholder="Contoh: @username atau nomor WA" />
         </div>
 
         <div class="field">
@@ -696,23 +696,18 @@
             id="bugDescription"
             rows="4"
             required
-            placeholder="Contoh: Saat saya klik tombol Unduh PDF di HP iPhone, file..."
+            placeholder="Contoh: Saat saya klik tombol Unduh PDF di HP, file..."
             style="width:100%; border:1.5px solid var(--border-input); border-radius:var(--radius-input); padding:0.75rem 0.9rem; font-family:inherit; font-size:0.9rem; color:var(--text-main); background:#FFFFFF; resize:vertical;"
           ></textarea>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.25rem;">
-          <button type="submit" id="btnSubmitBugEmail" class="btn-pill btn-navy" style="width:100%; padding:0.78rem 1rem;">
-            ✉️ Kirim Laporan ke Email
+        <div style="display:flex; justify-content:flex-end; align-items:center; gap:0.55rem; margin-top:0.35rem;">
+          <button type="button" id="btnCancelBugModal" class="btn-pill btn-soft">
+            Batal
           </button>
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; padding-top:0.35rem;">
-            <button type="button" id="btnOpenGmailWeb" class="link-reset" style="font-size:0.8rem;">
-              🌐 Buka via Gmail Web (Laptop/PC)
-            </button>
-            <button type="button" id="btnCancelBugModal" class="btn-pill btn-soft" style="padding:0.45rem 1rem; font-size:0.82rem;">
-              Batal
-            </button>
-          </div>
+          <button type="submit" id="btnSubmitBugEmail" class="btn-pill btn-navy" style="flex:1;">
+            🚀 Kirim Laporan
+          </button>
         </div>
       </form>
     </div>
@@ -720,6 +715,6 @@
 
   <div id="toast" class="toast no-print" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
