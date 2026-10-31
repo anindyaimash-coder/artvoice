@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
 
@@ -81,6 +81,7 @@
       </div>
       <button type="button" id="btnInstallApp" class="btn-pill btn-soft">📲 Install App</button>
       <button type="button" id="btnPrintTop" class="btn-pill btn-navy">📥 Simpan PDF</button>
+      <button type="button" id="btnReportBug" class="btn-bug-minimal" title="Laporkan Bug / Kendala" aria-label="Laporkan Bug">🐞</button>
     </div>
   </header>
 
@@ -657,8 +658,68 @@
     </div>
   </dialog>
 
+  <!-- BUG REPORT DIALOG (KIRIM KE EMAIL DEVELOPER) -->
+  <dialog id="bugReportDialog" class="install-modal no-print" style="max-width:480px;">
+    <div class="install-modal-inner">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem;">
+        <div>
+          <span class="step-pill" style="background:var(--sand-soft); color:var(--navy);">🐞 Bantuan &amp; Masukan</span>
+          <h3 style="font-size:1.28rem; margin-top:0.35rem;">Laporkan Bug / Kendala</h3>
+        </div>
+        <button type="button" id="btnCloseBugModal" class="btn-remove-item" aria-label="Tutup">×</button>
+      </div>
+      <p style="font-size:0.86rem; color:var(--text-body); margin-bottom:1rem;">
+        Menemukan fitur yang kurang pas atau error? Tuliskan detailnya di bawah ini untuk dikirim langsung ke email pengembang ArtVoice.
+      </p>
+
+      <form id="bugReportForm" onsubmit="return false;" style="display:flex; flex-direction:column; gap:0.85rem;">
+        <div class="field">
+          <label for="bugCategory">Bagian yang Bermasalah</label>
+          <select id="bugCategory">
+            <option value="Unduh / Simpan File PDF">Unduh / Simpan File PDF</option>
+            <option value="Data Form / Auto-Save">Data Form / Auto-Save</option>
+            <option value="Tampilan Kertas Invoice / SPK">Tampilan Kertas Invoice / SPK</option>
+            <option value="Kalkulator Tarif">Kalkulator Tarif</option>
+            <option value="Kode Akses / Lisensi">Kode Akses / Lisensi</option>
+            <option value="Lainnya / Saran Fitur">Lainnya / Saran Fitur</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="bugSenderContact">Email / Kontak Anda (Opsional)</label>
+          <input type="text" id="bugSenderContact" placeholder="Contoh: nama@email.com atau @username" />
+        </div>
+
+        <div class="field">
+          <label for="bugDescription">Ceritakan Kendala yang Dialami</label>
+          <textarea
+            id="bugDescription"
+            rows="4"
+            required
+            placeholder="Contoh: Saat saya klik tombol Unduh PDF di HP iPhone, file..."
+            style="width:100%; border:1.5px solid var(--border-input); border-radius:var(--radius-input); padding:0.75rem 0.9rem; font-family:inherit; font-size:0.9rem; color:var(--text-main); background:#FFFFFF; resize:vertical;"
+          ></textarea>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.25rem;">
+          <button type="submit" id="btnSubmitBugEmail" class="btn-pill btn-navy" style="width:100%; padding:0.78rem 1rem;">
+            ✉️ Kirim Laporan ke Email
+          </button>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; padding-top:0.35rem;">
+            <button type="button" id="btnOpenGmailWeb" class="link-reset" style="font-size:0.8rem;">
+              🌐 Buka via Gmail Web (Laptop/PC)
+            </button>
+            <button type="button" id="btnCancelBugModal" class="btn-pill btn-soft" style="padding:0.45rem 1rem; font-size:0.82rem;">
+              Batal
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
   <div id="toast" class="toast no-print" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

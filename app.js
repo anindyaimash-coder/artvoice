@@ -2175,6 +2175,137 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btnCloseAdminModal')?.addEventListener('click', () => adminKeyDialog?.close());
   document.getElementById('btnOkAdminModal')?.addEventListener('click', () => adminKeyDialog?.close());
+
+  // ==========================================
+  // FITUR LAPORKAN BUG / KENDALA KE EMAIL DEVELOPER
+  // ==========================================
+  const DEV_SUPPORT_EMAIL = 'anindyaimash@gmail.com';
+  const bugReportDialog = document.getElementById('bugReportDialog');
+  const bugReportForm = document.getElementById('bugReportForm');
+  const bugCategoryEl = document.getElementById('bugCategory');
+  const bugSenderEl = document.getElementById('bugSenderContact');
+  const bugDescEl = document.getElementById('bugDescription');
+  const btnSubmitBugEmail = document.getElementById('btnSubmitBugEmail');
+
+  function buildBugReportPayload() {
+    const category = bugCategoryEl?.value || 'Kendala Aplikasi';
+    const sender = (bugSenderEl?.value || '').trim() || 'Pengguna ArtVoice (Anonim)';
+    const desc = (bugDescEl?.value || '').trim();
+    const activeView = document.querySelector('.nav-pill.active')?.dataset?.view || 'editor';
+    const screenInfo = `${window.innerWidth}x${window.innerHeight} (${navigator.platform || 'Web'})`;
+    const ua = navigator.userAgent || '-';
+    const timestamp = new Date().toLocaleString('id-ID');
+
+    const subject = `[BUG ARTVOICE] ${category}`;
+    const body = [
+      `Halo Developer ArtVoice,`,
+      ``,
+      `Berikut laporan kendala / bug dari aplikasi ArtVoice:`,
+      `• Kategori: ${category}`,
+      `• Kontak Pelapor: ${sender}`,
+      `• Waktu: ${timestamp}`,
+      ``,
+      `Detail Kendala:`,
+      `${desc}`,
+      ``,
+      `----------------------------------------`,
+      `Info Teknis Otomatis:`,
+      `• Halaman Aktif: ${activeView} (Bahasa: ${state.docLang.toUpperCase()})`,
+      `• Layar & OS: ${screenInfo}`,
+      `• Browser: ${ua}`
+    ].join('\n');
+
+    return { category, sender, desc, subject, body, activeView, screenInfo, ua, timestamp };
+  }
+
+  document.getElementById('btnReportBug')?.addEventListener('click', () => {
+    if (bugReportDialog && typeof bugReportDialog.showModal === 'function') {
+      bugReportDialog.showModal();
+      setTimeout(() => bugDescEl?.focus(), 100);
+    } else {
+      window.location.href = `mailto:${DEV_SUPPORT_EMAIL}?subject=${encodeURIComponent('[BUG ARTVOICE] Laporan Kendala')}`;
+    }
+  });
+
+  document.getElementById('btnCloseBugModal')?.addEventListener('click', () => bugReportDialog?.close());
+  document.getElementById('btnCancelBugModal')?.addEventListener('click', () => bugReportDialog?.close());
+  bugReportDialog?.addEventListener('click', (e) => {
+    if (e.target === bugReportDialog) bugReportDialog.close();
+  });
+
+  bugReportForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = buildBugReportPayload();
+    if (!payload.desc) {
+      bugDescEl?.focus();
+      showToast('Mohon tuliskan detail kendala terlebih dahulu');
+      return;
+    }
+
+    const origBtnText = btnSubmitBugEmail?.textContent || '✉️ Kirim Laporan ke Email';
+    if (btnSubmitBugEmail) {
+      btnSubmitBugEmail.disabled = true;
+      btnSubmitBugEmail.textContent = '⏳ Mengirim laporan...';
+    }
+
+    let sentViaAjax = false;
+    try {
+      const resp = await fetch(`https://formsubmit.co/ajax/${DEV_SUPPORT_EMAIL}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify({
+          _subject: payload.subject,
+          Kategori: payload.category,
+          Pelapor: payload.sender,
+          Kendala: payload.desc,
+          Halaman_Aktif: payload.activeView,
+          Perangkat: payload.screenInfo,
+          Browser: payload.ua,
+          Waktu: payload.timestamp
+        })
+      });
+      if (resp.ok) {
+        const resJson = await resp.json().catch(() => ({}));
+        if (resJson && (resJson.success === 'true' || resJson.success === true)) {
+          sentViaAjax = true;
+        }
+      }
+    } catch {
+      // Fallback ke mailto langsung jika offline atau diblokir browser
+    }
+
+    if (btnSubmitBugEmail) {
+      btnSubmitBugEmail.disabled = false;
+      btnSubmitBugEmail.textContent = origBtnText;
+    }
+
+    if (sentViaAjax) {
+      if (bugDescEl) bugDescEl.value = '';
+      bugReportDialog?.close();
+      showToast('✅ Laporan bug berhasil dikirim ke email Developer!');
+    } else {
+      const mailtoUrl = `mailto:${DEV_SUPPORT_EMAIL}?subject=${encodeURIComponent(payload.subject)}&body=${encodeURIComponent(payload.body)}`;
+      window.location.href = mailtoUrl;
+      bugReportDialog?.close();
+      showToast('✉️ Membuka aplikasi Email untuk mengirim laporan...');
+    }
+  });
+
+  document.getElementById('btnOpenGmailWeb')?.addEventListener('click', () => {
+    const payload = buildBugReportPayload();
+    if (!payload.desc) {
+      bugDescEl?.focus();
+      showToast('Mohon tuliskan detail kendala terlebih dahulu');
+      return;
+    }
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(DEV_SUPPORT_EMAIL)}&su=${encodeURIComponent(payload.subject)}&body=${encodeURIComponent(payload.body)}`;
+    window.open(gmailUrl, '_blank', 'noopener');
+    bugReportDialog?.close();
+    showToast('🌐 Membuka Gmail Web di tab baru...');
+  });
 });
 
 
