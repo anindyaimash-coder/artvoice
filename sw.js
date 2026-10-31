@@ -1,8 +1,8 @@
-const CACHE_NAME = 'artvoice-pwa-v8';
+const CACHE_NAME = 'artvoice-pwa-v9';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=4',
+  './style.css?v=5',
   './app.js?v=8',
   './manifest.json',
   './icon-192.png',
