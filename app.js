@@ -1329,26 +1329,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. Parties & Dates Box
     y += 36;
-    const boxH = 186;
+    const midX = PAD + Math.round(CONTENT_W * 0.45);
+    const col1X = PAD + 34;
+    const col1MaxW = midX - col1X - 24;
+    const metaLabelX = midX + 32;
+    const metaRightX = W - PAD - 34;
+
+    ctx.font = '700 26px "DM Sans", -apple-system, sans-serif';
+    const clientNameLines = wrapCanvasText(ctx, data.clientName || 'Nama Klien', col1MaxW);
+    ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
+    const clientCompanyLines = data.clientCompany ? wrapCanvasText(ctx, data.clientCompany, col1MaxW) : [];
+    const clientContactLines = data.clientContact ? wrapCanvasText(ctx, data.clientContact, col1MaxW) : [];
+
+    const leftContentH =
+      54 +
+      clientNameLines.length * 32 +
+      clientCompanyLines.length * 28 +
+      clientContactLines.length * 28 +
+      22;
+
+    const rawMetaRows = [
+      [t.issueDate + ':', data.issueDate || '-'],
+      [t.dueDate + ':', data.dueDate || '-'],
+      [t.licenseBadge + ':', (licenseInfo.name.split('(')[0] || '').trim()]
+    ];
+
+    const preparedMetaRows = rawMetaRows.map(([label, val]) => {
+      ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
+      const labelW = ctx.measureText(label).width;
+      const availValW = Math.max(180, metaRightX - (metaLabelX + labelW + 24));
+      ctx.font = '700 21px "DM Sans", -apple-system, sans-serif';
+      const valLines = wrapCanvasText(ctx, val, availValW);
+      return { label, valLines };
+    });
+
+    const rightContentH =
+      34 +
+      preparedMetaRows.reduce((sum, row) => sum + Math.max(1, row.valLines.length) * 28 + 14, 0) +
+      16;
+
+    const boxH = Math.max(186, leftContentH, rightContentH);
     drawRoundedRect(ctx, PAD, y, CONTENT_W, boxH, 24, '#FAF8F3', null);
 
     // Left Party: Client
-    const col1X = PAD + 34;
     ctx.fillStyle = '#6E7A8A';
     ctx.font = '700 18px "DM Sans", -apple-system, sans-serif';
     ctx.fillText(t.billTo.toUpperCase(), col1X, y + 26);
 
+    let cy = y + 54;
     ctx.fillStyle = '#16263B';
     ctx.font = '700 26px "DM Sans", -apple-system, sans-serif';
-    ctx.fillText(data.clientName || 'Nama Klien', col1X, y + 54);
+    clientNameLines.forEach((line) => {
+      ctx.fillText(line, col1X, cy);
+      cy += 32;
+    });
 
     ctx.fillStyle = '#4A5568';
     ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
-    if (data.clientCompany) ctx.fillText(data.clientCompany, col1X, y + 90);
-    if (data.clientContact) ctx.fillText(data.clientContact, col1X, y + 120);
+    clientCompanyLines.forEach((line) => {
+      ctx.fillText(line, col1X, cy + 2);
+      cy += 28;
+    });
+    clientContactLines.forEach((line) => {
+      ctx.fillText(line, col1X, cy + 2);
+      cy += 28;
+    });
 
     // Vertical divider in box
-    const midX = PAD + CONTENT_W * 0.54;
     ctx.strokeStyle = '#EAE5DC';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -1356,24 +1403,21 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.lineTo(midX, y + boxH - 26);
     ctx.stroke();
 
-    // Right Meta Dates
-    const metaRows = [
-      [t.issueDate + ':', data.issueDate || '-'],
-      [t.dueDate + ':', data.dueDate || '-'],
-      [t.licenseBadge + ':', (licenseInfo.name.split('(')[0] || '').trim()]
-    ];
+    // Right Meta Dates & License (with automatic wrapping & collision protection)
     let my = y + 36;
-    metaRows.forEach(([label, val]) => {
+    preparedMetaRows.forEach(({ label, valLines }) => {
       ctx.fillStyle = '#6E7A8A';
       ctx.font = '400 21px "DM Sans", -apple-system, sans-serif';
-      ctx.fillText(label, midX + 32, my);
+      ctx.fillText(label, metaLabelX, my);
 
       ctx.textAlign = 'right';
       ctx.fillStyle = '#16263B';
       ctx.font = '700 21px "DM Sans", -apple-system, sans-serif';
-      ctx.fillText(val, W - PAD - 34, my);
+      valLines.forEach((vLine, idx) => {
+        ctx.fillText(vLine, metaRightX, my + idx * 28);
+      });
       ctx.textAlign = 'left';
-      my += 42;
+      my += Math.max(1, valLines.length) * 28 + 14;
     });
 
     // 3. Project Title Banner
