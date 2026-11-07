@@ -2092,16 +2092,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================
-  // SISTEM LISENSI & GENERATOR KODE UNIK (LYNK.ID / KARYAKARSA)
+  // SISTEM VERIFIKASI LISENSI PEMBELI (HASHED & BACKWARD-COMPATIBLE)
   // ==========================================
   const LICENSE_STORAGE_KEY = 'artvoice_license_unlocked_v1';
-  const MASTER_KEYS = new Set([
-    'ARTVOICE-PRO-2026',
-    'ARTVOICE-LYNK-VIP',
-    'ARTVOICE-KREATOR-ID'
+  const MASTER_KEY_HASHES = new Set([
+    'e9cbd063-bdadceab',
+    '147381a9-ada5975f',
+    'b25b3ad9-c37b1836'
   ]);
 
-  // Fungsi membuat checksum 4 karakter dari 4 karakter acak (tanpa database server)
+  function hashLicenseToken(str) {
+    let h1 = 0x811c9dc5;
+    let h2 = 0x01000193;
+    for (let i = 0; i < str.length; i++) {
+      const c = str.charCodeAt(i);
+      h1 ^= c;
+      h1 = Math.imul(h1, 0x01000193) >>> 0;
+      h2 ^= c + i * 17;
+      h2 = Math.imul(h2, 0x85ebca6b) >>> 0;
+    }
+    return h1.toString(16).padStart(8, '0') + '-' + h2.toString(16).padStart(8, '0');
+  }
+
   function computeKeyBlock2(block1) {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let sum = 19;
@@ -2116,19 +2128,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return out;
   }
 
-  function generateUniqueBuyerKey() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let block1 = '';
-    for (let i = 0; i < 4; i++) {
-      block1 += chars[Math.floor(Math.random() * chars.length)];
-    }
-    const block2 = computeKeyBlock2(block1);
-    return `ARTVOICE-${block1}-${block2}`;
-  }
-
   function isValidLicenseKey(rawKey) {
     const clean = String(rawKey || '').trim().toUpperCase();
-    if (MASTER_KEYS.has(clean)) return true;
+    if (!clean) return false;
+    if (MASTER_KEY_HASHES.has(hashLicenseToken(clean))) return true;
     const match = /^ARTVOICE-([A-Z0-9]{4})-([A-Z0-9]{4})$/.exec(clean);
     if (!match) return false;
     return computeKeyBlock2(match[1]) === match[2];
@@ -2139,22 +2142,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const licenseForm = document.getElementById('licenseForm');
   const licenseInput = document.getElementById('licenseInput');
   const licenseError = document.getElementById('licenseError');
-  const adminKeyDialog = document.getElementById('adminKeyDialog');
 
   function setAppUnlocked(unlocked) {
     if (licenseGate) licenseGate.hidden = unlocked;
     if (appShell) appShell.hidden = !unlocked;
   }
 
-  // Cek apakah sudah pernah di-unlock, membuka parameter ?admin=owner, atau membeli lewat Link Khusus (?key=...)
+  // Cek apakah sudah pernah di-unlock atau membeli lewat Link Khusus (?key=...)
   const urlParams = new URLSearchParams(window.location.search);
   const urlKey = urlParams.get('key') || urlParams.get('kode') || '';
 
-  if (urlParams.get('admin') === 'owner') {
-    localStorage.setItem(LICENSE_STORAGE_KEY, 'ARTVOICE-PRO-2026');
-  } else if (urlKey && isValidLicenseKey(urlKey)) {
+  if (urlKey && isValidLicenseKey(urlKey)) {
     localStorage.setItem(LICENSE_STORAGE_KEY, urlKey.trim().toUpperCase());
-    // Bersihkan parameter ?key= dari address bar setelah berhasil disimpan agar link terlihat bersih
     if (window.history && window.history.replaceState) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -2162,10 +2161,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   setAppUnlocked(Boolean(localStorage.getItem(LICENSE_STORAGE_KEY)));
-
-  if (urlParams.get('admin') === 'owner' && adminKeyDialog) {
-    setTimeout(() => adminKeyDialog.showModal(), 250);
-  }
 
   licenseForm?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -2179,46 +2174,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (licenseError) licenseError.hidden = false;
     }
   });
-
-  // Pintasan Rahasia Pemilik: Klik 5x pada titik oranye logo ArtVoice untuk membuka Generator Kode
-  let brandTapCount = 0;
-  let brandTapTimer = null;
-  document.getElementById('btnGoHome')?.addEventListener('click', () => {
-    brandTapCount++;
-    clearTimeout(brandTapTimer);
-    brandTapTimer = setTimeout(() => {
-      brandTapCount = 0;
-    }, 1500);
-    if (brandTapCount >= 5) {
-      brandTapCount = 0;
-      adminKeyDialog?.showModal();
-    }
-  });
-
-  // Tombol di dalam Modal Admin Generator Kode
-  document.getElementById('btnGenerateNewKey')?.addEventListener('click', () => {
-    const newKey = generateUniqueBuyerKey();
-    const disp = document.getElementById('generatedKeyDisplay');
-    if (disp) disp.textContent = newKey;
-  });
-
-  document.getElementById('btnCopyGeneratedKey')?.addEventListener('click', () => {
-    const keyText = document.getElementById('generatedKeyDisplay')?.textContent?.trim() || 'ARTVOICE-PRO-2026';
-    navigator.clipboard.writeText(keyText).then(() => {
-      showToast(`Kode ${keyText} disalin!`);
-    });
-  });
-
-  document.getElementById('btnRelockApp')?.addEventListener('click', () => {
-    localStorage.removeItem(LICENSE_STORAGE_KEY);
-    adminKeyDialog?.close();
-    setAppUnlocked(false);
-    if (licenseInput) licenseInput.value = '';
-    showToast('🔒 Aplikasi dikunci kembali untuk tes tampilan pembeli');
-  });
-
-  document.getElementById('btnCloseAdminModal')?.addEventListener('click', () => adminKeyDialog?.close());
-  document.getElementById('btnOkAdminModal')?.addEventListener('click', () => adminKeyDialog?.close());
 
   // ==========================================
   // FITUR LAPORKAN BUG / KENDALA (SILENT BACKGROUND SUBMIT - PRIVASI EMAIL PENUH)
