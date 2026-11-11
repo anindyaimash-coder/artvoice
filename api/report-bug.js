@@ -32,9 +32,15 @@ export default async function handler(req, res) {
       })
     });
 
-    const data = await response.json().catch(() => ({}));
-    return res.status(200).json({ ok: true, data });
+    const rawText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = { raw: rawText };
+    }
+    return res.status(200).json({ ok: response.ok, status: response.status, data });
   } catch (err) {
-    return res.status(200).json({ ok: true, queued: true });
+    return res.status(500).json({ ok: false, error: err.message });
   }
 }
