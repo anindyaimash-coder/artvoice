@@ -39,8 +39,11 @@ export default async function handler(req, res) {
     } catch {
       data = { raw: rawText };
     }
-    return res.status(200).json({ ok: response.ok, status: response.status, data });
+    if (!response.ok) {
+      return res.status(502).json({ ok: false, status: response.status, data });
+    }
+    return res.status(200).json({ ok: true, status: response.status, data });
   } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message });
+    return res.status(502).json({ ok: false, error: err.message });
   }
 }
