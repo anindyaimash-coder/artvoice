@@ -2274,6 +2274,115 @@ document.addEventListener('DOMContentLoaded', () => {
     bugReportDialog?.close();
     showToast('✅ Laporan berhasil dikirim! Terima kasih atas masukan Anda.');
   });
+
+  // ==========================================
+  // FITUR PEMULIHAN KODE AKSES (LUPA KODE / GANTI HP & LAPTOP)
+  // ==========================================
+  const lostKeyDialog = document.getElementById('lostKeyDialog');
+  const lostKeyForm = document.getElementById('lostKeyForm');
+  const lostKeyBuyerNameEl = document.getElementById('lostKeyBuyerName');
+  const lostKeyBuyerContactEl = document.getElementById('lostKeyBuyerContact');
+  const lostKeyNoteEl = document.getElementById('lostKeyNote');
+  const btnSubmitLostKey = document.getElementById('btnSubmitLostKey');
+
+  document.getElementById('btnOpenLostKeyModal')?.addEventListener('click', () => {
+    if (lostKeyDialog && typeof lostKeyDialog.showModal === 'function') {
+      lostKeyDialog.showModal();
+      setTimeout(() => lostKeyBuyerNameEl?.focus(), 100);
+    }
+  });
+
+  document.getElementById('btnCloseLostKeyModal')?.addEventListener('click', () => lostKeyDialog?.close());
+  document.getElementById('btnCancelLostKeyModal')?.addEventListener('click', () => lostKeyDialog?.close());
+
+  // Fallback for browsers without <dialog closedby="any"> support
+  if (lostKeyDialog && !('closedBy' in HTMLDialogElement.prototype)) {
+    lostKeyDialog.addEventListener('click', (event) => {
+      if (event.target !== lostKeyDialog) return;
+      const rect = lostKeyDialog.getBoundingClientRect();
+      const isDialogContent =
+        rect.top <= event.clientY &&
+        event.clientY <= rect.top + rect.height &&
+        rect.left <= event.clientX &&
+        event.clientX <= rect.left + rect.width;
+      if (!isDialogContent) lostKeyDialog.close();
+    });
+  }
+
+  lostKeyForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const buyerName = (lostKeyBuyerNameEl?.value || '').trim();
+    const buyerContact = (lostKeyBuyerContactEl?.value || '').trim();
+    const note = (lostKeyNoteEl?.value || '').trim() || 'Ganti perangkat / lupa kode akses';
+
+    if (!buyerName || !buyerContact) {
+      showToast('Mohon isi Nama/Email pembelian dan Kontak tujuan pengiriman kode');
+      return;
+    }
+
+    const payload = {
+      category: 'Pemulihan Kode Akses (Ganti Perangkat / Lupa Kode)',
+      sender: `${buyerName} (Kirim ke: ${buyerContact})`,
+      desc: `Nama/Email Pembelian Lynk.id: ${buyerName}\nKontak Tujuan Kirim Kode Baru: ${buyerContact}\nKeterangan: ${note}`,
+      subject: `[PEMULIHAN KODE ARTVOICE] ${buyerName}`,
+      activeView: 'license-gate',
+      screenInfo: `${window.innerWidth}x${window.innerHeight} (${navigator.platform || 'Web'})`,
+      ua: navigator.userAgent || '-',
+      timestamp: new Date().toLocaleString('id-ID')
+    };
+
+    const origText = btnSubmitLostKey?.textContent || '📩 Minta Kirim Ulang Kode';
+    if (btnSubmitLostKey) {
+      btnSubmitLostKey.disabled = true;
+      btnSubmitLostKey.textContent = '⏳ Mengirim...';
+    }
+
+    try {
+      const apiResp = await fetch('/api/report-bug', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!apiResp.ok) {
+        const encodedEndpoint = 'aHR0cHM6Ly9mb3Jtc3VibWl0LmNvL2FqYXgvYW5pbmR5YWltYXNoQGdtYWlsLmNvbQ==';
+        await fetch(atob(encodedEndpoint), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify({
+            _subject: payload.subject,
+            _template: 'table',
+            _captcha: 'false',
+            Kategori: payload.category,
+            Data_Pembeli: buyerName,
+            Kirim_Kode_Ke: buyerContact,
+            Keterangan: note,
+            Perangkat_Layar: payload.screenInfo,
+            Waktu: payload.timestamp
+          })
+        });
+      }
+    } catch {
+      // Tetap tutup modal secara tenang dengan privasi penuh
+    }
+
+    if (btnSubmitLostKey) {
+      btnSubmitLostKey.disabled = false;
+      btnSubmitLostKey.textContent = origText;
+    }
+
+    if (lostKeyBuyerNameEl) lostKeyBuyerNameEl.value = '';
+    if (lostKeyBuyerContactEl) lostKeyBuyerContactEl.value = '';
+    if (lostKeyNoteEl) lostKeyNoteEl.value = '';
+    lostKeyDialog?.close();
+    showToast('✅ Permintaan terkirim! Kode akses akan segera dikirimkan ke kontak Anda.');
+  });
 });
 
 
